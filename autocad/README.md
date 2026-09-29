@@ -8,7 +8,7 @@
    Jei norite, kad failas būtų įkeliamas kiekvieną kartą, pridėkite jį į *Startup Suite*.
 2. Paleiskite komandą `KZIN`.
 
-Reikalavimai: AutoCAD 2021 ar naujesnė versija su `LISPSYS = 1` (numatytoji reikšmė). Failas užkoduotas UTF-8, todėl be šio nustatymo lietuviškos raidės gali būti rodomos neteisingai.
+Lietuviškos raidės sukuriamos vykdymo metu, todėl failo koduotė nesvarbi. Tekstuose jos užrašytos žymėmis: `{s}` = š, `{ee}` = ė ir pan. Dialogo lange raidės užrašomos `\U+XXXX` kodais. Veikia su AutoCAD 2021+ (`LISPSYS = 1`). Senesnėse versijose raidės rodomos teisingai tik tada, kai Windows naudoja baltų (1257) kodų lentelę.
 
 ## Kaip veikia (kaip originale)
 

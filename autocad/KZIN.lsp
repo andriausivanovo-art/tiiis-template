@@ -35,6 +35,56 @@
       *kz-sel* nil)  ; pažymėta eilutė sąraše
 
 ;;; ---------------------------------------------------------------------
+;;; Lietuviškos raidės
+;;; Faile tekstai rašomi tik ASCII simboliais: {a}=ą {c}=č {e}=ę {ee}=ė
+;;; {i}=į {s}=š {u}=ų {uu}=ū {z}=ž (didžiosios: {A} {C} ...). Raidės
+;;; sukuriamos vykdymo metu, todėl failo koduotė nesvarbi.
+;;; ---------------------------------------------------------------------
+
+;; (žymė unicode ANSI-1257 hex)
+(setq *kz-lt*
+  '(("{a}" 261 224 "0105") ("{A}" 260 192 "0104")
+    ("{c}" 269 232 "010D") ("{C}" 268 200 "010C")
+    ("{e}" 281 230 "0119") ("{E}" 280 198 "0118")
+    ("{ee}" 279 235 "0117") ("{EE}" 278 203 "0116")
+    ("{i}" 303 225 "012F") ("{I}" 302 193 "012E")
+    ("{s}" 353 240 "0161") ("{S}" 352 208 "0160")
+    ("{u}" 371 248 "0173") ("{U}" 370 216 "0172")
+    ("{uu}" 363 251 "016B") ("{UU}" 362 219 "016A")
+    ("{z}" 382 254 "017E") ("{Z}" 381 222 "017D")))
+
+;; ar AutoLISP dirba Unicode režimu (LISPSYS = 1)
+(setq *kz-uni*
+  (and (= (getvar "LISPSYS") 1)
+       (not (vl-catch-all-error-p (setq *kz-tmp* (vl-catch-all-apply 'chr '(353)))))
+       (= (ascii *kz-tmp*) 353)))
+
+(defun kz:subst-all (new old s)
+  (while (vl-string-search old s)
+    (setq s (vl-string-subst new old s))
+  )
+  s
+)
+
+;; tekstas su lietuviškomis raidėmis (pranešimams, sluoksniams, atributams)
+(defun kz:t (s)
+  (foreach m *kz-lt*
+    (setq s (kz:subst-all (chr (if *kz-uni* (cadr m) (caddr m))) (car m) s))
+  )
+  s
+)
+
+;; tas pats DCL failui: \U+XXXX kodai, failas lieka ASCII
+(defun kz:td (s)
+  (foreach m *kz-lt*
+    (setq s (kz:subst-all (strcat "\\U+" (cadddr m)) (car m) s))
+  )
+  s
+)
+
+(setq *kz-isn* (kz:t "I{s}na{s}a")) ; išnašų sluoksnis
+
+;;; ---------------------------------------------------------------------
 ;;; Bendros pagalbinės funkcijos
 ;;; ---------------------------------------------------------------------
 
@@ -176,7 +226,7 @@
 
 (defun kz:ensure-blocks ()
   (kz:layer "Koordinate")
-  (kz:layer "Išnaša")
+  (kz:layer *kz-isn*)
   (regapp "KZIN")
   (if (not (tblsearch "BLOCK" "koordinate"))
     (progn
@@ -191,9 +241,9 @@
   (if (not (tblsearch "BLOCK" "isnasa"))
     (progn
       (entmake '((0 . "BLOCK") (8 . "0") (2 . "isnasa") (70 . 2) (10 0.0 0.0 0.0)))
-      (entmake '((0 . "LINE") (8 . "Išnaša") (62 . 256) (10 0.0 0.0 0.0) (11 9.0 0.0 0.0)))
-      (kz:attdef "Koordinate_x" "Išnaša" nil)
-      (kz:attdef "Koordinate_y" "Išnaša" nil)
+      (entmake (list '(0 . "LINE") (cons 8 *kz-isn*) '(62 . 256) '(10 0.0 0.0 0.0) '(11 9.0 0.0 0.0)))
+      (kz:attdef "Koordinate_x" *kz-isn* nil)
+      (kz:attdef "Koordinate_y" *kz-isn* nil)
       (entmake '((0 . "ENDBLK") (8 . "0")))
     )
   )
@@ -374,13 +424,13 @@
   (cond
     ((null es) nil)
     ((/= (cdr (assoc 0 (setq el (entget (setq e (car es)))))) "LWPOLYLINE")
-     (princ (strcat "\nPažymėtas objektas yra: " (cdr (assoc 0 el)) "\n"))
+     (princ (strcat (kz:t "\nPa{z}ym{ee}tas objektas yra: ") (cdr (assoc 0 el)) "\n"))
      nil)
     ((kz:has-arcs el)
-     (princ "\nPolilinija (Polyline) turi lankų (Arcs)\n")
+     (princ (kz:t "\nPolilinija (Polyline) turi lank{u} (Arcs)\n"))
      nil)
     ((null (setq p (osnap (cadr es) "_end")))
-     (princ "\nPažymėkite liniją arčiau jos viršūnės.\n")
+     (princ (kz:t "\nPa{z}ym{ee}kite linij{a} ar{c}iau jos vir{s}{uu}n{ee}s.\n"))
      nil)
     (T (list e (trans p 1 0) el))
   )
@@ -457,12 +507,12 @@
 
 ;; Ribos linija (R)
 (defun kz:riba (/ r e p el vs n st dir nr pr num k)
-  (if (setq r (kz:pick-pline "\nPažymėkite poliliniją (Polyline) be lankų (Arcs)\n"))
+  (if (setq r (kz:pick-pline (kz:t "\nPa{z}ym{ee}kite polilinij{a} (Polyline) be lank{u} (Arcs)\n")))
     (progn
       (setq e (car r) p (cadr r) el (caddr r) vs (kz:verts el) n (length vs)
             st (kz:vidx vs p))
       (if (and (null st)
-               (kz:taip "Nepavyko pasirinkti numeravimo pradžios taško. Ar pradėti numeracija nuo pradžios?"))
+               (kz:taip (kz:t "Nepavyko pasirinkti numeravimo prad{z}ios ta{s}ko. Ar prad{ee}ti numeracija nuo prad{z}ios?")))
         (setq st 0)
       )
       (if st
@@ -490,12 +540,12 @@
 
 ;; Ašinė linija (A)
 (defun kz:asis (/ r e p el vs n st dir ds km0 nr pr num k idx)
-  (if (setq r (kz:pick-pline "\nPažymėkite poliliniją (Polyline) be lankų (Arcs)\n"))
+  (if (setq r (kz:pick-pline (kz:t "\nPa{z}ym{ee}kite polilinij{a} (Polyline) be lank{u} (Arcs)\n")))
     (progn
       (setq e (car r) p (cadr r) el (caddr r) vs (kz:verts el) n (length vs))
       (cond ((kz:eq2 p (car vs)) (setq st 0 dir 1))
             ((kz:eq2 p (nth (1- n) vs)) (setq st (1- n) dir -1))
-            (T (alert "Reikia pasirinkti ašinės linijos pradžią arba pabaigą"))
+            (T (alert (kz:t "Reikia pasirinkti a{s}in{ee}s linijos prad{z}i{a} arba pabaig{a}")))
       )
       (if st
         (progn
@@ -523,7 +573,7 @@
 ;; Centro taškas / taškinis objektas (O)
 (defun kz:centras (/ nr pr num p)
   (setq nr (kz:parse-nr (kz:get "nr")) pr (car nr) num (cdr nr))
-  (while (setq p (getpoint "\nPažymėkit objektą <Enter - baigti>: "))
+  (while (setq p (getpoint (kz:t "\nPa{z}ym{ee}kit objekt{a} <Enter - baigti>: ")))
     (kz:insert-point (trans p 1 0) (strcat pr (itoa num)) nil "3" nil)
     (setq num (1+ num))
   )
@@ -532,7 +582,7 @@
 
 ;; Ištrinti objekto taškus
 (defun kz:trinti-obj (/ es e el h)
-  (if (setq es (entsel "\nPažymėkit objektą: "))
+  (if (setq es (entsel (kz:t "\nPa{z}ym{ee}kit objekt{a}: ")))
     (progn
       (setq e (car es) el (entget e))
       (if (and (= (cdr (assoc 0 el)) "INSERT")
@@ -561,23 +611,23 @@
                 (car (cadr (textbox (list (cons 1 bot) (cons 40 h) '(7 . "Standard"))))))
         len (max (* 9.0 s) (+ w hp hp))
         ins (if (< (car q) (car p)) (list (- (car q) len) (cadr q) 0.0) q))
-  (entmake (list '(0 . "LINE") '(8 . "Išnaša") '(62 . 256) (cons 10 p) (cons 11 q)))
-  (entmake (list '(0 . "INSERT") '(66 . 1) '(2 . "isnasa") '(8 . "Išnaša") '(62 . 256)
+  (entmake (list '(0 . "LINE") (cons 8 *kz-isn*) '(62 . 256) (cons 10 p) (cons 11 q)))
+  (entmake (list '(0 . "INSERT") '(66 . 1) '(2 . "isnasa") (cons 8 *kz-isn*) '(62 . 256)
                  (cons 10 ins) (cons 41 (/ len 9.0)) (cons 42 s) (cons 43 s) '(50 . 0.0)))
   (foreach a (list (list "Koordinate_x" top (+ (cadr ins) v))
                    (list "Koordinate_y" bot (- (cadr ins) v h)))
-    (entmake (list '(0 . "ATTRIB") '(8 . "Išnaša") '(62 . 256)
+    (entmake (list '(0 . "ATTRIB") (cons 8 *kz-isn*) '(62 . 256)
                    (list 10 (+ (car ins) hp) (caddr a) 0.0)
                    (cons 40 h) (cons 1 (cadr a)) (cons 2 (car a)) '(70 . 0)
                    '(7 . "Standard") '(50 . 0.0)))
   )
-  (entmake '((0 . "SEQEND") (8 . "Išnaša")))
+  (entmake (list '(0 . "SEQEND") (cons 8 *kz-isn*)))
 )
 
 ;; Koordinatės išnaša
 (defun kz:isn-koord (/ p q)
-  (if (and (setq p (getpoint "\nPasirinkite tašką"))
-           (setq q (getpoint p "\nPasirinkite išnašos vietą")))
+  (if (and (setq p (getpoint (kz:t "\nPasirinkite ta{s}k{a}")))
+           (setq q (getpoint p (kz:t "\nPasirinkite i{s}na{s}os viet{a}"))))
     (progn
       (setq p (trans p 1 0) q (trans q 1 0))
       (kz:isnasa p q (kz:fmt (cadr p) 2) (kz:fmt (car p) 2))
@@ -596,8 +646,8 @@
 
 ;; Linijos išnaša: "a-b" ir "L = ..."
 (defun kz:isn-linija (/ r e q vs a b len)
-  (if (and (setq r (kz:pline-at "\nPažymėkit tašką ant linijos\n"))
-           (setq q (getpoint (trans (cadr r) 0 1) "\nPasirinkite išnašos vietą")))
+  (if (and (setq r (kz:pline-at (kz:t "\nPa{z}ym{ee}kit ta{s}k{a} ant linijos\n")))
+           (setq q (getpoint (trans (cadr r) 0 1) (kz:t "\nPasirinkite i{s}na{s}os viet{a}"))))
     (progn
       (setq e   (car r)
             vs  (kz:verts (entget e))
@@ -615,7 +665,7 @@
 
 ;; Pridėti tašką į liniją
 (defun kz:prideti (/ r e p el sp ld ty km nr s)
-  (if (setq r (kz:pline-at "\nPažymėkit tašką ant linijos\n"))
+  (if (setq r (kz:pline-at (kz:t "\nPa{z}ym{ee}kit ta{s}k{a} ant linijos\n")))
     (progn
       (setq e  (car r)
             p  (vlax-curve-getClosestPointTo e (cadr r))
@@ -634,7 +684,7 @@
                        1000.0)))
       )
       (setq nr (kz:get "nr")
-            s  (getstring (strcat "\nTaško numeris <" nr ">: ")))
+            s  (getstring (strcat (kz:t "\nTa{s}ko numeris <") nr ">: ")))
       (if (/= s "") (setq nr s))
       (kz:insert-point p nr km ty (cdr (assoc 5 (entget e))))
       (kz:put "nr" (kz:next-nr nr))
@@ -644,7 +694,7 @@
 
 ;; Ištrinti tašką iš linijos
 (defun kz:istrinti (/ r e el sp vs i best d bi b)
-  (if (setq r (kz:pline-at "\nPažymėkit tašką ant linijos\n"))
+  (if (setq r (kz:pline-at (kz:t "\nPa{z}ym{ee}kit ta{s}k{a} ant linijos\n")))
     (progn
       (setq e  (car r)
             el (entget e)
@@ -656,7 +706,7 @@
         (setq i (1+ i))
       )
       (if (<= (length vs) (if (kz:closed-p el) 3 2))
-        (alert "Linijoje turi likti bent 2 taškai (uždaroje - 3).")
+        (alert (kz:t "Linijoje turi likti bent 2 ta{s}kai (u{z}daroje - 3)."))
         (progn
           (if (setq b (kz:find-at (nth bi vs))) (entdel b))
           (setq sp (kz:pl-split el))
@@ -669,13 +719,13 @@
 
 ;; Pernumeruoti taškus (pvz. 1.1 -> 1.1, 1.2, ...)
 (defun kz:pernumeruoti (/ s nr pr num m es e el vs n ld st dir k idx b)
-  (setq s (getstring (strcat "\nPradžios numeris (pvz. 1.1) <" (kz:get "nr") ">: ")))
+  (setq s (getstring (strcat (kz:t "\nPrad{z}ios numeris (pvz. 1.1) <") (kz:get "nr") ">: ")))
   (if (= s "") (setq s (kz:get "nr")))
   (setq nr (kz:parse-nr s) pr (car nr) num (cdr nr))
   (initget "Linija Taskai")
   (setq m (getkword "\nPernumeruoti [Linija/Taskai] <Linija>: "))
   (if (= m "Taskai")
-    (while (setq es (entsel "\nPažymėkite tašką <Enter - baigti>: "))
+    (while (setq es (entsel (kz:t "\nPa{z}ym{ee}kite ta{s}k{a} <Enter - baigti>: ")))
       (setq e (car es) el (entget e))
       (if (and (= (cdr (assoc 0 el)) "INSERT")
                (= (strcase (cdr (assoc 2 el))) "KOORDINATE"))
@@ -683,10 +733,10 @@
           (kz:setatt e "Koordinate" (strcat pr (itoa num)))
           (setq num (1+ num))
         )
-        (princ "\nTai ne koordinatės taškas.")
+        (princ (kz:t "\nTai ne koordinat{ee}s ta{s}kas."))
       )
     )
-    (if (and (setq es (entsel "\nPažymėkite liniją: "))
+    (if (and (setq es (entsel (kz:t "\nPa{z}ym{ee}kite linij{a}: ")))
              (= (cdr (assoc 0 (setq el (entget (setq e (car es)))))) "LWPOLYLINE"))
       (progn
         (setq vs  (kz:verts el)
@@ -756,7 +806,7 @@
        )
      ))
     ((null (setq p (and *kz-sel* (nth *kz-sel* *kz-pts*))))
-     (alert "Pasirinkite tašką sąraše."))
+     (alert (kz:t "Pasirinkite ta{s}k{a} s{a}ra{s}e.")))
     ((= kas "taska")
      (setq p (nth 2 p))
      (kz:zoom (list (- (car p) m) (- (cadr p) m) 0.0) (list (+ (car p) m) (+ (cadr p) m) 0.0)))
@@ -764,7 +814,7 @@
      (vla-GetBoundingBox (vlax-ename->vla-object e) 'mn 'mx)
      (setq mn (vlax-safearray->list mn) mx (vlax-safearray->list mx))
      (kz:zoom (list (- (car mn) m) (- (cadr mn) m) 0.0) (list (+ (car mx) m) (+ (cadr mx) m) 0.0)))
-    (T (alert "Taškas nesusietas su linija."))
+    (T (alert (kz:t "Ta{s}kas nesusietas su linija.")))
   )
 )
 
@@ -787,17 +837,17 @@
 (defun kz:lentele (/ ip rows tbl h r c ms)
   (setq rows (kz:rows))
   (cond
-    ((null rows) (alert "Sąraše nėra taškų."))
-    ((setq ip (getpoint "\nNurodykite lentelės vietą: "))
+    ((null rows) (alert (kz:t "S{a}ra{s}e n{ee}ra ta{s}k{u}.")))
+    ((setq ip (getpoint (kz:t "\nNurodykite lentel{ee}s viet{a}: ")))
      (setq h   (kz:get "aukstis")
            ms  (vla-get-ModelSpace (vla-get-ActiveDocument (vlax-get-acad-object)))
            tbl (vla-AddTable ms (vlax-3d-point (trans ip 1 0)) (+ 2 (length rows)) 6
                              (* 2.0 h) (* 8.0 h)))
      (vla-put-RegenerateTableSuppressed tbl :vlax-true)
      (vla-SetTextHeight tbl 7 h)
-     (vla-SetText tbl 0 0 "KOORDINAČIŲ ŽINIARAŠTIS")
+     (vla-SetText tbl 0 0 (kz:t "KOORDINA{C}I{U} {Z}INIARA{S}TIS"))
      (setq c 0)
-     (foreach t1 '("Eil.Nr." "Taško Nr." "X" "Y" "Km" "Tipas")
+     (foreach t1 (list "Eil.Nr." (kz:t "Ta{s}ko Nr.") "X" "Y" "Km" "Tipas")
        (vla-SetText tbl 1 c t1)
        (setq c (1+ c))
      )
@@ -818,22 +868,27 @@
 
 (defun kz:open-w (fn / f)
   (setq f (vl-catch-all-apply 'open (list fn "w" "utf8")))
-  (if (or (null f) (vl-catch-all-error-p f)) (open fn "w") f)
+  (if (or (null f) (vl-catch-all-error-p f))
+    (progn (setq *kz-utf8* nil) (open fn "w"))
+    (progn (setq *kz-utf8* T) f)
+  )
 )
 
 (defun kz:csv (/ fn f)
-  (if (setq fn (getfiled "Išsaugoti koordinačių žiniaraštį"
+  (if (setq fn (getfiled (kz:t "I{s}saugoti koordina{c}i{u} {z}iniara{s}t{i}")
                          (strcat (getvar "DWGPREFIX") "ziniarastis") "csv" 1))
     (progn
       (setq f (kz:open-w fn))
-      (write-line "Eil.Nr.;Taško Nr.;X;Y;Km;Tipas" f)
+      ;; BOM, kad Excel atpažintų UTF-8
+      (if (and *kz-utf8* *kz-uni*) (princ (chr 65279) f))
+      (write-line (kz:t "Eil.Nr.;Ta{s}ko Nr.;X;Y;Km;Tipas") f)
       (foreach row (kz:rows)
         (write-line (strcat (nth 0 row) ";" (nth 1 row) ";" (nth 2 row) ";"
                             (nth 3 row) ";" (nth 4 row) ";" (nth 5 row))
                     f)
       )
       (close f)
-      (princ (strcat "\nIšsaugota: " fn))
+      (princ (strcat (kz:t "\nI{s}saugota: ") fn))
     )
   )
 )
@@ -844,41 +899,41 @@
 
 (defun kz:dcl-lines ()
   '("kzin : dialog {"
-    "  label = \"Koordinačių žiniaraščio formavimas\";"
+    "  label = \"Koordina{c}i{u} {z}iniara{s}{c}io formavimas\";"
     "  : row {"
     "    : boxed_column {"
     "      label = \"Pradiniai duomenys\";"
     "      : edit_box { key = \"nr\"; label = \"Nr.:\"; edit_width = 10; }"
     "      : edit_box { key = \"km\"; label = \"Km:\"; edit_width = 10; }"
     "      : button { key = \"riba\"; label = \"Ribos linija\"; }"
-    "      : button { key = \"asis\"; label = \"Ašinę liniją\"; }"
-    "      : button { key = \"centras\"; label = \"Centro tašką\"; }"
-    "      : button { key = \"trinti\"; label = \"Ištrinti objekto taškus\"; }"
+    "      : button { key = \"asis\"; label = \"A{s}in{e} linij{a}\"; }"
+    "      : button { key = \"centras\"; label = \"Centro ta{s}k{a}\"; }"
+    "      : button { key = \"trinti\"; label = \"I{s}trinti objekto ta{s}kus\"; }"
     "    }"
     "    : boxed_column {"
-    "      label = \"Taško bloko nustatymai\";"
-    "      : edit_box { key = \"aukstis\"; label = \"Žymėjimo aukštis:\"; edit_width = 8; }"
+    "      label = \"Ta{s}ko bloko nustatymai\";"
+    "      : edit_box { key = \"aukstis\"; label = \"{Z}ym{ee}jimo auk{s}tis:\"; edit_width = 8; }"
     "      : edit_box { key = \"vpoz\"; label = \"V pozicija:\"; edit_width = 8; }"
     "      : edit_box { key = \"hpoz\"; label = \"H pozicija:\"; edit_width = 8; }"
-    "      : edit_box { key = \"dydis\"; label = \"Taško dydis:\"; edit_width = 8; }"
+    "      : edit_box { key = \"dydis\"; label = \"Ta{s}ko dydis:\"; edit_width = 8; }"
     "      : button { key = \"saugoti\"; label = \"Saugoti\"; }"
     "      : text { label = \"Legenda:\"; }"
-    "      : text { label = \"A - ašis\"; }"
+    "      : text { label = \"A - a{s}is\"; }"
     "      : text { label = \"R - riba\"; }"
-    "      : text { label = \"O - taškinis objektas\"; }"
-    "      : text { label = \"* - besidubliojančios koordinatės\"; }"
+    "      : text { label = \"O - ta{s}kinis objektas\"; }"
+    "      : text { label = \"* - besidubliojan{c}ios koordinat{ee}s\"; }"
     "    }"
     "    : column {"
     "      : boxed_column {"
-    "        label = \"Išnašos\";"
-    "        : button { key = \"isn_k\"; label = \"Koordinatės išnaša\"; }"
-    "        : button { key = \"isn_l\"; label = \"Linijos išnaša\"; }"
+    "        label = \"I{s}na{s}os\";"
+    "        : button { key = \"isn_k\"; label = \"Koordinat{ee}s i{s}na{s}a\"; }"
+    "        : button { key = \"isn_l\"; label = \"Linijos i{s}na{s}a\"; }"
     "      }"
     "      : boxed_column {"
     "        label = \"Redaguoti\";"
-    "        : button { key = \"prideti\"; label = \"Pridėti tašką į liniją\"; }"
-    "        : button { key = \"istrinti\"; label = \"Ištrinti tašką iš linijos\"; }"
-    "        : button { key = \"pernum\"; label = \"Pernumeruoti taškus\"; }"
+    "        : button { key = \"prideti\"; label = \"Prid{ee}ti ta{s}k{a} {i} linij{a}\"; }"
+    "        : button { key = \"istrinti\"; label = \"I{s}trinti ta{s}k{a} i{s} linijos\"; }"
+    "        : button { key = \"pernum\"; label = \"Pernumeruoti ta{s}kus\"; }"
     "        : text { label = \"Pvz: 1.1 -> 1.1,1.2,..\"; }"
     "      }"
     "    }"
@@ -887,10 +942,10 @@
     "  : list_box { key = \"sarasas\"; height = 16; width = 84; fixed_width_font = true; }"
     "  : text { key = \"info\"; }"
     "  : row {"
-    "    : button { key = \"rod_t\"; label = \"Rodyti tašką\"; }"
-    "    : button { key = \"rod_l\"; label = \"Rodyti liniją\"; }"
-    "    : button { key = \"rod_v\"; label = \"Rodyti viską\"; }"
-    "    : button { key = \"lentele\"; label = \"Įterpti lentelę\"; }"
+    "    : button { key = \"rod_t\"; label = \"Rodyti ta{s}k{a}\"; }"
+    "    : button { key = \"rod_l\"; label = \"Rodyti linij{a}\"; }"
+    "    : button { key = \"rod_v\"; label = \"Rodyti visk{a}\"; }"
+    "    : button { key = \"lentele\"; label = \"{I}terpti lentel{e}\"; }"
     "    : button { key = \"csv\"; label = \"Eksportuoti CSV\"; }"
     "    : button { key = \"cancel\"; label = \"Baigti\"; is_cancel = true; }"
     "  }"
@@ -899,8 +954,8 @@
 
 (defun kz:write-dcl (/ fn f)
   (setq fn (vl-filename-mktemp "kzin.dcl")
-        f  (kz:open-w fn))
-  (foreach l (kz:dcl-lines) (write-line l f))
+        f  (open fn "w"))
+  (foreach l (kz:dcl-lines) (write-line (kz:td l) f))
   (close f)
   fn
 )
@@ -921,7 +976,7 @@
   (set_tile "vpoz" (kz:fmt (kz:get "vpoz") 2))
   (set_tile "hpoz" (kz:fmt (kz:get "hpoz") 2))
   (set_tile "dydis" (kz:fmt (kz:get "dydis") 2))
-  (set_tile "antraste" (kz:row-str '("Eil.Nr." "Taško Nr." "X" "Y" "Km" "Tipas" "")))
+  (set_tile "antraste" (kz:row-str (list "Eil.Nr." (kz:t "Ta{s}ko Nr.") "X" "Y" "Km" "Tipas" "")))
   (setq rows (kz:rows))
   (start_list "sarasas")
   (foreach r rows (add_list (kz:row-str r)))
@@ -931,8 +986,8 @@
     (setq *kz-sel* nil)
   )
   (set_tile "info"
-            (strcat "Taškų: " (itoa (length rows))
-                    (if (kz:dups) "   Sąraše yra besidubliojancių koordinačių." "")))
+            (strcat (kz:t "Ta{s}k{u}: ") (itoa (length rows))
+                    (if (kz:dups) (kz:t "   S{a}ra{s}e yra besidubliojanci{u} koordina{c}i{u}.") "")))
 )
 
 ;; nuskaito laukus; grąžina nil, jei yra tuščių / neteisingų
@@ -948,7 +1003,7 @@
   (kz:put "nr" (vl-string-trim " " (get_tile "nr")))
   (setq v (vl-string-trim " " (get_tile "km")))
   (kz:put "km" (if (= v "") "0.000" v))
-  (if (not ok) (alert "Neleistini tušti laukeliai"))
+  (if (not ok) (alert (kz:t "Neleistini tu{s}ti laukeliai")))
   ok
 )
 
@@ -1020,5 +1075,5 @@
   (princ)
 )
 
-(princ "\nKZIN įkeltas. Komanda: KZIN - Koordinačių žiniaraštis.")
+(princ (kz:t "\nKZIN {i}keltas. Komanda: KZIN - Koordina{c}i{u} {z}iniara{s}tis."))
 (princ)
