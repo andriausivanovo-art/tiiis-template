@@ -38,32 +38,43 @@ Kalba: Python 3.10+, tik standartinė biblioteka (be pip priklausomybių).
 - Spinta užklausų sintaksė: `?dokumento_reg_data>="2026-09-01"&limit(1000)`, kitas puslapis
   `&page("<_page.next>")`. Jei datos filtras grąžina klaidą, `fetch.py` pereina prie viso rinkinio.
 
-## Likę darbai
+## Būsena (2026-10-05): atlikta
 
-1. `sistema.py` – CLI (argparse), komandos:
-   - `diagnose` – `fetch.diagnose()`
-   - `fetch [--since YYYY-MM-DD]` – jei nenurodyta: `db.last_since()` minus `OVERLAP_DAYS`, pirmą kartą `FIRST_RUN_DAYS`
-   - `import-csv <failas> [--since]` – rankiniu būdu atsisiųstas CSV iš data.gov.lt
-   - `build` – perkuria signalus iš `raw_records` (tik paveiktiems dokumentams), praleidžia `is_excluded`
-   - `enrich <failas> [--all]` – JAR/Sodros failas; numatytai įkelia tik įmones iš `signals.builder_code`
-   - `builders` – `enrich.apply_builders()`
-   - `report [--days 7] [--all-types]` – CSV, statytojų eilė, HTML į `isvestis/` su data pavadinime
-   - `sample --paskirtis X --savivaldybe Y --tipas Z --limit 10 --antraste "..."` – pavyzdys klientui
-   - `run` – fetch + build + builders + report (savaitiniam paleidimui), įrašo į `runs`
-   - `demo` – sugeneruoja demonstracinius duomenis į atskirą DB (`duomenys/demo.sqlite`) ir ataskaitą
-2. `demo/generate_demo.py` – ~80 tikroviškų įrašų su tiksliais laukų pavadinimais, keli dokumentai su
-   keliais statiniais, įvairūs tipai ir savivaldybės (Vilniaus m., Kauno m., Kauno r., Klaipėdos r.,
-   Šiaulių m., Panevėžio m., Vilniaus r.), WGS taškai tose vietose. Įmonių pavadinimai su žodžiu „DEMO“.
-3. Testai (`tests/`, unittest, kad nereikėtų pytest): `classify`, `wgs_point` (abi tvarkos), `municipality`,
-   `build_signal` grupavimas ir balas, `enrich._map_columns` su JAR ir Sodros stiliaus antraštėmis,
-   `report` smoke testas (HTML sugeneruojamas, JSON validus).
-4. `README.md` (lietuviškai): diegimas, komandos, savaitinis paleidimas (`run_weekly.bat` Windows
-   užduočių planuoklei ir cron eilutė), kaip pildyti `builders.csv`.
-5. `run_weekly.bat`, `.gitignore` (`duomenys/*.sqlite`, `isvestis/`).
-6. `PLANAS.md`: architektūra, 4 savaičių planas, pardavimai (viena niša, pavyzdys kaip pasiūlymas,
-   kainų lygiai 49–79 / 149–249 / 300–500 / nuo 1000 € per mėn.), teisiniai klausimai (BDAR, licencija
-   be perpardavimo teisės, veiklos forma, darbo sutarties apribojimai), sprendimo kriterijus
-   (3–5 įmonės sutinka mokėti ar rimtai bandyti po 20–30 pavyzdžių).
+Visi šeši anksčiau likę darbai padaryti, sistema išplėsta Latvijai, Lenkijai ir Estijai:
+
+1. `sistema.py` – visos komandos (`diagnose`, `fetch`, `import-csv`, `build`, `enrich`, `builders`, `report`,
+   `sample`, `run`, `demo`) ir naujos: `import` (bet kurios šalies failai ar nuorodos), `ee-order`, `--salis`.
+2. `demo/generate_demo.py` – 87 LT įrašai (48 dokumentai, 7 savivaldybės, visi tipai, DEMO įmonės,
+   builders/JAR/Sodros failai) ir LV/PL/EE failai tikrais šaltinių formatais.
+3. `tests/` – 71 testas (`python -m unittest`), praeina su Python 3.10–3.13, be tinklo.
+4. `README.md`, 5. `run_weekly.bat`, `.gitignore`, `.gitattributes`, 6. `PLANAS.md`.
+
+Kitos šalys (`saltiniai/`): LV – BIS CSV iš data.gov.lv (bylų stadijų pokyčiai), PL – GUNB RWDZ ZIP
+(leidimai su investuotoju, pranešimai), EE – EHR atvirų duomenų API (ataskaita užsakoma el. paštu, importas,
+L-EST97 -> WGS84). LV ir PL patikrinti su tikrais duomenimis iš šios aplinkos (gyvas `run`: ~870 LV ir
+~1 100 PL signalų per 30 d., ~30 s). LT API iš debesies užblokuotas („Web Page Blocked“), kaip ir tikėtasi.
+
+Esamo kodo pataisymai (rasti rašant testus):
+- `config.SIGNAL_RULES`: abu šio failo `dok_irasas` pavyzdžiai buvo klasifikuojami neteisingai
+  („Deklaracija apie statybos užbaigimą / paskirties keitimą“ – kaip paskirties keitimo leidimas,
+  „Pažyma ... be nukrypimų“ – kaip „Kita“). Dabar abu – „Statybos užbaigimas“.
+- `report.fetch_rows`: `COALESCE(s.builder_name, c.name)` neveikė – `dict(sqlite3.Row)` ima pirmą vienodo
+  pavadinimo stulpelį, todėl JAR pavadinimas niekada nepatekdavo į ataskaitą.
+- `enrich._read_any`: `csv.Sniffer` Sodros failui parinkdavo kablelį (jis yra antraštėje ir sumose);
+  skirtukas dabar nustatomas pagal antraštę.
+- `fetch.read_csv` skaito srautu ir tikrina stulpelius; ugniasienės puslapis atpažįstamas iškart.
+- `signals`: statiniai skaičiuojami ir pagal `statinio_id` (nauji statiniai neturi unikalaus numerio);
+  paskirties balas – pagal vertingiausią statinį (tinklai prie namo balo nebemažina).
+- `db`: šalies stulpeliai su automatine migracija, `taskai` lentelė koordinatėms.
+
+## Kas liko (reikia Lietuvos IP arba savininko sprendimo)
+
+- Paleisti `python sistema.py diagnose` ir pirmą `run` iš Lietuvos IP: patikrinti, ar Spinta datos filtras
+  veikia, ar `config.F` laukai sutampa ir kokia „Kita“ dalis (`dok_irasas` reikšmes pritaikyti `SIGNAL_RULES`).
+- `config.py`: `USER_AGENT` kontaktas, `INFOSTATYBA_SEARCH_URL`, `RUN_COUNTRIES`, `PL_WOJEWODZTWA`.
+- EE: pirmą kartą užsakyti ataskaitą (`ee-order --email`) ir patikrinti tikro failo formatą (skirtukas,
+  būsenų reikšmės); adapteris parašytas pagal EHR API metaduomenis, tikro failo dar nematėme.
+- Įmonių duomenys LV/PL/EE (Uzņēmumu reģistrs, KRS/REGON, äriregister) dar nejungti – kol kas tik LT JAR/Sodra.
 
 ## Priėmimo kriterijai
 

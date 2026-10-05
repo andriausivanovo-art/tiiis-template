@@ -1,0 +1,2 @@
+# Windows paketiniai failai turi CRLF eilučių pabaigas
+*.bat text eol=crlf

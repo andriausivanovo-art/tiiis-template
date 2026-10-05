@@ -1,2088 +1,606 @@
 {
 "_saltinis": "https://livekluster.ehr.ee/api/av/v2/params/ (kaos, omvconstraints, mkconstraints, ehseisund), 2026-10-05",
 "seisund": {
-"EHITIS_SEISUND_KUSTU": "Kustutatud",
-"EHITIS_SEISUND_REATA": "Realiseerimata",
-"EHITIS_SEISUND_KAVAN": "Kavandatav",
-"EHITIS_SEISUND_LAMUT": "Lammutatud",
-"EHITIS_SEISUND_PYSTI": "Püstitamisel",
-"EHITIS_SEISUND_OLEMA": "Olemas"
+  "EHITIS_SEISUND_KUSTU": "Kustutatud",
+  "EHITIS_SEISUND_REATA": "Realiseerimata",
+  "EHITIS_SEISUND_KAVAN": "Kavandatav",
+  "EHITIS_SEISUND_LAMUT": "Lammutatud",
+  "EHITIS_SEISUND_PYSTI": "Püstitamisel",
+  "EHITIS_SEISUND_OLEMA": "Olemas"
 },
 "maakond": {
-"37": "Harju maakond",
-"39": "Hiiu maakond",
-"45": "Ida-Viru maakond",
-"52": "Järva maakond",
-"50": "Jõgeva maakond",
-"56": "Lääne maakond",
-"60": "Lääne-Viru maakond",
-"68": "Pärnu maakond",
-"64": "Põlva maakond",
-"71": "Rapla maakond",
-"74": "Saare maakond",
-"79": "Tartu maakond",
-"81": "Valga maakond",
-"84": "Viljandi maakond",
-"87": "Võru maakond"
+  "37": "Harju maakond",
+  "39": "Hiiu maakond",
+  "45": "Ida-Viru maakond",
+  "52": "Järva maakond",
+  "50": "Jõgeva maakond",
+  "56": "Lääne maakond",
+  "60": "Lääne-Viru maakond",
+  "68": "Pärnu maakond",
+  "64": "Põlva maakond",
+  "71": "Rapla maakond",
+  "74": "Saare maakond",
+  "79": "Tartu maakond",
+  "81": "Valga maakond",
+  "84": "Viljandi maakond",
+  "87": "Võru maakond"
 },
 "omavalitsus": {
-"130": "Alutaguse vald",
-"141": "Anija vald",
-"145": "Antsla vald",
-"171": "Elva vald",
-"184": "Haapsalu linn",
-"191": "Haljala vald",
-"198": "Harku vald",
-"205": "Hiiumaa vald",
-"214": "Häädemeeste vald",
-"255": "Järva vald",
-"245": "Jõelähtme vald",
-"247": "Jõgeva vald",
-"250": "Jõhvi vald",
-"272": "Kadrina vald",
-"283": "Kambja vald",
-"284": "Kanepi vald",
-"291": "Kastre vald",
-"293": "Kehtna vald",
-"296": "Keila linn",
-"303": "Kihnu vald",
-"305": "Kiili vald",
-"317": "Kohila vald",
-"321": "Kohtla-Järve linn",
-"338": "Kose vald",
-"353": "Kuusalu vald",
-"424": "Loksa linn",
-"432": "Luunja vald",
-"431": "Lääne-Harju vald",
-"441": "Lääne-Nigula vald",
-"430": "Lääneranna vald",
-"442": "Lüganuse vald",
-"446": "Maardu linn",
-"478": "Muhu vald",
-"480": "Mulgi vald",
-"486": "Mustvee vald",
-"502": "Märjamaa vald",
-"511": "Narva linn",
-"515": "Narva-Jõesuu linn",
-"528": "Nõo vald",
-"557": "Otepää vald",
-"567": "Paide linn",
-"586": "Peipsiääre vald",
-"624": "Pärnu linn",
-"637": "Põhja-Pärnumaa vald",
-"615": "Põhja-Sakala vald",
-"618": "Põltsamaa vald",
-"622": "Põlva vald",
-"6671": "Püssi linn",
-"651": "Raasiku vald",
-"653": "Rae vald",
-"663": "Rakvere linn",
-"661": "Rakvere vald",
-"668": "Rapla vald",
-"689": "Ruhnu vald",
-"708": "Räpina vald",
-"698": "Rõuge vald",
-"712": "Saarde vald",
-"714": "Saaremaa vald",
-"719": "Saku vald",
-"725": "Saue vald",
-"732": "Setomaa vald",
-"736": "Sillamäe linn",
-"784": "Tallinn",
-"792": "Tapa vald",
-"793": "Tartu linn",
-"796": "Tartu vald",
-"809": "Tori vald",
-"806": "Tori vald",
-"824": "Tõrva vald",
-"834": "Türi vald",
-"857": "Valga vald",
-"890": "Viimsi vald",
-"897": "Viljandi linn",
-"899": "Viljandi vald",
-"901": "Vinni vald",
-"903": "Viru-Nigula vald",
-"907": "Vormsi vald",
-"928": "Väike-Maarja vald",
-"919": "Võru linn",
-"917": "Võru vald"
+  "130": "Alutaguse vald",
+  "141": "Anija vald",
+  "145": "Antsla vald",
+  "171": "Elva vald",
+  "184": "Haapsalu linn",
+  "191": "Haljala vald",
+  "198": "Harku vald",
+  "205": "Hiiumaa vald",
+  "214": "Häädemeeste vald",
+  "255": "Järva vald",
+  "245": "Jõelähtme vald",
+  "247": "Jõgeva vald",
+  "250": "Jõhvi vald",
+  "272": "Kadrina vald",
+  "283": "Kambja vald",
+  "284": "Kanepi vald",
+  "291": "Kastre vald",
+  "293": "Kehtna vald",
+  "296": "Keila linn",
+  "303": "Kihnu vald",
+  "305": "Kiili vald",
+  "317": "Kohila vald",
+  "321": "Kohtla-Järve linn",
+  "338": "Kose vald",
+  "353": "Kuusalu vald",
+  "424": "Loksa linn",
+  "432": "Luunja vald",
+  "431": "Lääne-Harju vald",
+  "441": "Lääne-Nigula vald",
+  "430": "Lääneranna vald",
+  "442": "Lüganuse vald",
+  "446": "Maardu linn",
+  "478": "Muhu vald",
+  "480": "Mulgi vald",
+  "486": "Mustvee vald",
+  "502": "Märjamaa vald",
+  "511": "Narva linn",
+  "515": "Narva-Jõesuu linn",
+  "528": "Nõo vald",
+  "557": "Otepää vald",
+  "567": "Paide linn",
+  "586": "Peipsiääre vald",
+  "624": "Pärnu linn",
+  "637": "Põhja-Pärnumaa vald",
+  "615": "Põhja-Sakala vald",
+  "618": "Põltsamaa vald",
+  "622": "Põlva vald",
+  "6671": "Püssi linn",
+  "651": "Raasiku vald",
+  "653": "Rae vald",
+  "663": "Rakvere linn",
+  "661": "Rakvere vald",
+  "668": "Rapla vald",
+  "689": "Ruhnu vald",
+  "708": "Räpina vald",
+  "698": "Rõuge vald",
+  "712": "Saarde vald",
+  "714": "Saaremaa vald",
+  "719": "Saku vald",
+  "725": "Saue vald",
+  "732": "Setomaa vald",
+  "736": "Sillamäe linn",
+  "784": "Tallinn",
+  "792": "Tapa vald",
+  "793": "Tartu linn",
+  "796": "Tartu vald",
+  "809": "Tori vald",
+  "806": "Tori vald",
+  "824": "Tõrva vald",
+  "834": "Türi vald",
+  "857": "Valga vald",
+  "890": "Viimsi vald",
+  "897": "Viljandi linn",
+  "899": "Viljandi vald",
+  "901": "Vinni vald",
+  "903": "Viru-Nigula vald",
+  "907": "Vormsi vald",
+  "928": "Väike-Maarja vald",
+  "919": "Võru linn",
+  "917": "Võru vald"
 },
 "kaos": {
-"11000": [
-"11000",
-"ELAMUD"
-],
-"11100": [
-"11100",
-"Ühe korteriga elamud"
-],
-"11101": [
-"11101",
-"Üksikelamu"
-],
-"11102": [
-"11102",
-"Ridaelamu või kaksikelamu sektsioon (juhul kui on oma katus ja sissepääs maapinnalt)"
-],
-"11103": [
-"11103",
-"Suvila, aiamaja"
-],
-"11200": [
-"11200",
-"Kahe või mitme korteriga elamud"
-],
-"11210": [
-"11210",
-"Kahe korteriga elamud"
-],
-"11211": [
-"11211",
-"Kaksikelamu"
-],
-"30051": [
-"11212",
-"Kahe korteriga elamu"
-],
-"11212": [
-"11212",
-"Muu kahe korteriga elamu"
-],
-"11220": [
-"11220",
-"Kolme  või enama korteriga elamud"
-],
-"11221": [
-"11221",
-"Ridaelamu"
-],
-"11222": [
-"11222",
-"Muu kolme või enama korteriga elamu"
-],
-"11300": [
-"11300",
-"Hoolekandeasutuste ja ühiselamute hooned"
-],
-"11310": [
-"11310",
-"Hoolekandeasutuste hooned"
-],
-"11311": [
-"11311",
-"Päevakeskus"
-],
-"11312": [
-"11312",
-"Tugikodu"
-],
-"11313": [
-"11313",
-"Varjupaik"
-],
-"11314": [
-"11314",
-"Lastekodu"
-],
-"11315": [
-"11315",
-"Noortekodu"
-],
-"11316": [
-"11316",
-"Üldhooldekodu"
-],
-"11317": [
-"11317",
-"Koolkodu"
-],
-"11318": [
-"11318",
-"Sotsiaalse rehabilitatsiooni keskus"
-],
-"11319": [
-"11319",
-"Erihooldekodu"
-],
-"11320": [
-"11320",
-"Ühiselamud"
-],
-"11321": [
-"11321",
-"Ühiselamu üliõpilastele või õpilastele"
-],
-"11322": [
-"11322",
-"Ühiselamu teistele sotsiaalsetele gruppidele"
-],
-"12000": [
-"12000",
-"MITTEELAMUD"
-],
-"12100": [
-"12100",
-"Majutus- ja toitlustushooned"
-],
-"12110": [
-"12110",
-"Majutushooned"
-],
-"12111": [
-"12111",
-"Hotell"
-],
-"30052": [
-"12111",
-"Hotell, motell, külalistemaja"
-],
-"12112": [
-"12112",
-"Motell"
-],
-"12113": [
-"12113",
-"Külalistemaja"
-],
-"12114": [
-"12114",
-"Sanatooriumi majutushoone, pansionaat, mis ei kuulu haiglate ja muude ravihoonete gruppi"
-],
-"12120": [
-"12120",
-"Lühiajalise majutuse hooned"
-],
-"12121": [
-"12121",
-"Puhkeküla või puhkelaagri majutushoone"
-],
-"12122": [
-"12122",
-"Puhkemaja"
-],
-"12123": [
-"12123",
-"Hostel"
-],
-"12129": [
-"12129",
-"Muu lühiajalise majutuse hoone"
-],
-"12130": [
-"12130",
-"Toitlustushooned"
-],
-"12131": [
-"12131",
-"Restoran"
-],
-"12132": [
-"12132",
-"Kohvik, baar või söökla"
-],
-"12133": [
-"12133",
-"Kiirtoitlustushoone"
-],
-"12139": [
-"12139",
-"Muu toitlustushoone"
-],
-"12200": [
-"12200",
-"Büroohooned"
-],
-"12201": [
-"12201",
-"Büroohoone"
-],
-"12202": [
-"12202",
-"Pangahoone"
-],
-"12203": [
-"12203",
-"Administratiivhoone"
-],
-"12204": [
-"12204",
-"Kohtuhoone"
-],
-"12205": [
-"12205",
-"Konverentsihoone"
-],
-"12206": [
-"12206",
-"Postimaja, sidejaoskond või postkontor"
-],
-"12209": [
-"12209",
-"Muu büroo- või administratiivhoone"
-],
-"12300": [
-"12300",
-"Kaubandus- ja teenindushooned"
-],
-"12310": [
-"12310",
-"Kaubandushooned"
-],
-"30053": [
-"12311",
-"Kaubandushoone"
-],
-"12311": [
-"12311",
-"Toidukauplus"
-],
-"12312": [
-"12312",
-"Kauplus, mis ei ole toidukauplus"
-],
-"12313": [
-"12313",
-"Apteek"
-],
-"30054": [
-"12314",
-"Kiosk"
-],
-"12314": [
-"12314",
-"Kiosk toiduainete müügiks"
-],
-"12315": [
-"12315",
-"Kiosk, mis ei ole toiduainete müügiks"
-],
-"12316": [
-"12316",
-"Bensiinijaama hoone"
-],
-"12317": [
-"12317",
-"Oksjoni-, turu- või näitusehall"
-],
-"30055": [
-"12319",
-"Muu kaubandushoone"
-],
-"12319": [
-"12319",
-"Muu kaubandushoone või kauplus"
-],
-"12320": [
-"12320",
-"Hulgikaubandushooned"
-],
-"12321": [
-"12321",
-"Toiduainete hulgiladu"
-],
-"12322": [
-"12322",
-"Muu hulgiladu"
-],
-"12330": [
-"12330",
-"Teenindushoone "
-],
-"12331": [
-"12331",
-"Ilu- ja isikuteenust osutava ettevõtte hoone, nagu näiteks juuksuritöökoda, solaarium ja saun"
-],
-"30056": [
-"12331",
-"Ilu- ja isikuteenuste  hoone"
-],
-"12332": [
-"12332",
-"Sõidukite teeninduse hoone"
-],
-"12333": [
-"12333",
-"Keemiline puhastus, pesumaja"
-],
-"12339": [
-"12339",
-"Muu teenindushoone"
-],
-"12400": [
-"12400",
-"Transpordihooned"
-],
-"12410": [
-"12410",
-"Terminalid"
-],
-"12411": [
-"12411",
-"Lennujaam"
-],
-"30033": [
-"12411",
-"Lennujaama hoone"
-],
-"12412": [
-"12412",
-"Lennukiangaar"
-],
-"12413": [
-"12413",
-"Raudteejaam"
-],
-"30034": [
-"12413",
-"Raudteejaama hoone"
-],
-"12414": [
-"12414",
-"Raudtee infrastruktuuri hoone"
-],
-"12415": [
-"12415",
-"Bussijaam"
-],
-"30035": [
-"12415",
-"Bussijaama hoone"
-],
-"12416": [
-"12416",
-"Sadamahoone"
-],
-"12417": [
-"12417",
-"Lennujuhtimiskeskuse hoone"
-],
-"30036": [
-"12419",
-"Muu terminalihoone"
-],
-"12419": [
-"12419",
-"Muu transpordihoone, nagu näiteks tuletorn"
-],
-"12420": [
-"12420",
-"Sidehooned"
-],
-"12421": [
-"12421",
-"Raadio-, televisiooni saate- või võimenduskeskuse hoone"
-],
-"12422": [
-"12422",
-"Telekommunikatsioonivõrgu hoone"
-],
-"12429": [
-"12429",
-"Muu sidehoone, nagu näiteks taksofoni kabiin"
-],
-"12430": [
-"12430",
-"Garaažid"
-],
-"12431": [
-"12431",
-"Allmaa- või pealmaagaraaž"
-],
-"30037": [
-"12431",
-"Garaaž"
-],
-"12432": [
-"12432",
-"Parkimishoone"
-],
-"30038": [
-"12432",
-"Parkimismaja"
-],
-"30039": [
-"12439",
-"Muu garaaž"
-],
-"12439": [
-"12439",
-"Muu garaaž, nagu näiteks jalgrattahoidla"
-],
-"12500": [
-"12500",
-"Tööstus- ja laohooned"
-],
-"12510": [
-"12510",
-"Tööstushooned"
-],
-"12511": [
-"12511",
-"Maavarade kaevandamise ja töötlemise hoone"
-],
-"12512": [
-"12512",
-"Energeetikaettevõtte hoone"
-],
-"30040": [
-"12512",
-"Energeetikatööstuse hoone"
-],
-"12513": [
-"12513",
-"Keemiatööstuse hoone"
-],
-"12514": [
-"12514",
-"Toiduainetetööstuse hoone"
-],
-"12515": [
-"12515",
-"Ehitusmaterjalide ja -toodete tööstuse hoone"
-],
-"12516": [
-"12516",
-"Kergetööstuse hoone"
-],
-"12517": [
-"12517",
-"Puidutööstuse hoone"
-],
-"12518": [
-"12518",
-"Masina- ja seadmetööstuse hoone"
-],
-"12519": [
-"12519",
-"Muu tööstusharu tootmishoone"
-],
-"30041": [
-"12519",
-"Muu tööstushoone"
-],
-"12520": [
-"12520",
-"Hoidlad ja laohooned"
-],
-"30042": [
-"12521",
-"Toiduainete laohoone"
-],
-"12521": [
-"12521",
-"Toiduainetetööstuse laohoone"
-],
-"12522": [
-"12522",
-"Konteinerite terminali hoone"
-],
-"12523": [
-"12523",
-"Vedelkütuse-, gaasi- jm terminali hoidlahoone"
-],
-"30043": [
-"12523",
-"Vedelkütuse-, küttegaasi- jm terminali hoidlahoone"
-],
-"12524": [
-"12524",
-"Elevaator või puisteaine hoidlahoone"
-],
-"30044": [
-"12525",
-"Külmhoone"
-],
-"12525": [
-"12525",
-"Külmhoone või eriladu"
-],
-"30045": [
-"12529",
-"Muu laohoone"
-],
-"12529": [
-"12529",
-"Muu tööstuse laohoone"
-],
-"12600": [
-"12600",
-"Meelelahutus-, haridus- tervishoiu- ja muud avalikud hooned"
-],
-"12610": [
-"12610",
-"Meelelahutushooned"
-],
-"12611": [
-"12611",
-"Teater"
-],
-"30046": [
-"12611",
-"Teater, kino, kontserdi- ja universaalsaalide hoone"
-],
-"12612": [
-"12612",
-"Kino"
-],
-"12613": [
-"12613",
-"Kontserdi- ja universaalsaalide hoone"
-],
-"12614": [
-"12614",
-"Tantsusaal, diskoteek, kasiino (kehtetu alates 27.05.2008)"
-],
-"12615": [
-"12615",
-"Klubi, rahvamaja"
-],
-"12616": [
-"12616",
-"Tantsusaal, diskoteek"
-],
-"30075": [
-"12616",
-"Tantsusaal, diskoteek, ööklubi"
-],
-"12617": [
-"12617",
-"Kasiino"
-],
-"30076": [
-"12618",
-"Loomaaia või botaanikaaia hoone"
-],
-"30047": [
-"12619",
-"Muu meelelahutushoone"
-],
-"12619": [
-"12619",
-"Muu meelelahutushoone, nagu näiteks loomaaia ja botaanikaaia hoone"
-],
-"12620": [
-"12620",
-"Muuseumi- ja raamatukoguhooned"
-],
-"12621": [
-"12621",
-"Muuseum"
-],
-"30048": [
-"12621",
-"Muuseum, kunstigalerii"
-],
-"12622": [
-"12622",
-"Kunstigalerii"
-],
-"12623": [
-"12623",
-"Raamatukogu"
-],
-"12624": [
-"12624",
-"Arhiiv"
-],
-"12625": [
-"12625",
-"Teaduskeskus"
-],
-"12630": [
-"12630",
-"Haridus- ja teadushooned"
-],
-"12631": [
-"12631",
-"Lastehoiu, lasteaia, lasteaed-algkooli õppehoone"
-],
-"30049": [
-"12632",
-"Põhikooli või gümnaasiumi õppehoone"
-],
-"12632": [
-"12632",
-"Põhikooli või gümnaasiumi õppehoonehoone"
-],
-"12633": [
-"12633",
-"Kutseõppeasutuse õppehoone"
-],
-"12634": [
-"12634",
-"Ülikooli, rakenduskõrgkooli õppehoone"
-],
-"12635": [
-"12635",
-"Teadus- ja metoodikaasutuse hoone"
-],
-"12636": [
-"12636",
-"Huvialakooli õppehoone"
-],
-"12637": [
-"12637",
-"Täiendus- või ümberõppeasutuse hoone"
-],
-"30000": [
-"12639",
-"Muu haridus- või teadushoone"
-],
-"12639": [
-"12639",
-"Muu haridus- või teadushoone, nagu näiteks labor, õppetöökoda, ilmajaam ja observatoorium"
-],
-"12640": [
-"12640",
-"Haiglad ja muud ravihooned"
-],
-"30001": [
-"12641",
-"Haigla"
-],
-"12641": [
-"12641",
-"Haigla (üld-, eri- või ülkooli juures asuv haigla)"
-],
-"12642": [
-"12642",
-"Kaitseväehaigla"
-],
-"12643": [
-"12643",
-"Kinnipidamiskoha haigla"
-],
-"30002": [
-"12644",
-"Ambulatoorse arstiabi osutamise hoone"
-],
-"12644": [
-"12644",
-"Haiglavälise arstiabi osutamise hoone (perearstikeskus, polikliinik, ambulatoorium)"
-],
-"12645": [
-"12645",
-"Sanatoorium"
-],
-"30003": [
-"12645",
-"Sanatoorium, spaa"
-],
-"30004": [
-"12646",
-"Veterinaarkliinik"
-],
-"12646": [
-"12646",
-"Veterinaarravila"
-],
-"30005": [
-"12649",
-"Muu tervishoiuhoone"
-],
-"12649": [
-"12649",
-"Muu tervishoiuhoone, nagu näiteks vereülekandejaam"
-],
-"12650": [
-"12650",
-"Spordihooned"
-],
-"30006": [
-"12651",
-"Spordihall, võimla"
-],
-"12651": [
-"12651",
-"Spordihall, võimla (kohtadega pealtvaatajatele)"
-],
-"12652": [
-"12652",
-"Spordihall, võimla (puuduvad kohad pealtvaatajatele)"
-],
-"12653": [
-"12653",
-"Siseujula"
-],
-"12654": [
-"12654",
-"Jäähall"
-],
-"12655": [
-"12655",
-"Maneež"
-],
-"12656": [
-"12656",
-"Lasketiir"
-],
-"30007": [
-"12656",
-"Lasketiiru hoone"
-],
-"12659": [
-"12659",
-"Muu spordihoone"
-],
-"12700": [
-"12700",
-"Muud mitteelamud"
-],
-"12710": [
-"12710",
-"Põllumajanduse, metsa-, jahi- ja kalamajandushooned"
-],
-"12711": [
-"12711",
-"Loomakasvatushoone, sealhulgas karuslooma- või linnukasvatus"
-],
-"12712": [
-"12712",
-"Kartuli-, köögivilja- või söödajuurviljahoidla"
-],
-"12713": [
-"12713",
-"Puuvilja-, marja- või teraviljahoidla"
-],
-"12714": [
-"12714",
-"Teraviljakuivati"
-],
-"12715": [
-"12715",
-"Heinaküün"
-],
-"30008": [
-"12715",
-"Loomasööda hoidla"
-],
-"12716": [
-"12716",
-"Põllumajandusmasinate remonditöökoda või hoiukuur"
-],
-"12717": [
-"12717",
-"Metsa-, jahi- või kalamajandushoone"
-],
-"12718": [
-"12718",
-"Mineraalväetiste või taimekaitsevahendite hoidla"
-],
-"30009": [
-"12719",
-"Muu põllu-, metsa-, jahi- või kalamajandushoone"
-],
-"12719": [
-"12719",
-"Muu põllu-, metsa-, jahi- või kalamajandushoone, sealhulgas kasvuhoone"
-],
-"12720": [
-"12720",
-"Kultus- ja tavandihooned"
-],
-"12721": [
-"12721",
-"Kirik, katedraal, mošee, sünagoog, palvemaja või kabel"
-],
-"30010": [
-"12721",
-"Kirik, katedraal, mošee, sünagoog, palvemaja või kabel"
-],
-"12722": [
-"12722",
-"Kogudushoone"
-],
-"12723": [
-"12723",
-"Krematoorium"
-],
-"12724": [
-"12724",
-"Tavandihoone"
-],
-"12729": [
-"12729",
-"Muu kultuse- või tavandihoone"
-],
-"12730": [
-"12730",
-"Ajaloolised või kaitse all olevad hooned"
-],
-"30011": [
-"12731",
-"Ajalooline või kaitse all olev  hoone"
-],
-"12731": [
-"12731",
-"Ajalooline või kaitse all olev eksponeeritav hoone"
-],
-"12732": [
-"12732",
-"Muinsuskaitse all olev vare"
-],
-"12740": [
-"12740",
-"Erihooned"
-],
-"30012": [
-"12741",
-"Reoveepuhasti hoone"
-],
-"12741": [
-"12741",
-"Sisekaitse- või kaitseväehoone"
-],
-"30013": [
-"12742",
-"Karistusasutuse hoone"
-],
-"12742": [
-"12742",
-"Karistusasutuse hoone, vangla või koloonia"
-],
-"30014": [
-"12743",
-"Päästeteenistuse hoone"
-],
-"12743": [
-"12743",
-"Päästeteenistuse hoone, tuletõrjedepoo"
-],
-"30015": [
-"12744",
-"Elamu, kooli vms abihoone"
-],
-"12744": [
-"12744",
-"Elamu, talu, kooli vms majapidamisabihoone, nagu näiteks kuur, individuaalgaraaž ja saun"
-],
-"12745": [
-"12745",
-"Katlamaja, boilerjaam"
-],
-"30016": [
-"12746",
-"Kaevumaja"
-],
-"12746": [
-"12746",
-"Pumbamaja, kaevumaja"
-],
-"12747": [
-"12747",
-"Hoone loodushoiu- või puhastusseadmetele"
-],
-"30017": [
-"12747",
-"Veepuhastusjaama hoone"
-],
-"12748": [
-"12748",
-"Jäätmehoidla hoone"
-],
-"30018": [
-"12748",
-"Jäätmekäitluse hoone"
-],
-"30019": [
-"12749",
-"Muu erihoone"
-],
-"12749": [
-"12749",
-"Muu erihoone, nagu näiteks varjend"
-],
-"12750": [
-"12750",
-"Erihooned"
-],
-"12751": [
-"12751",
-"Kaugjahutusjaam"
-],
-"12752": [
-"12752",
-"Soojuspumbajaam"
-],
-"21000": [
-"21000",
-"TRANSPORDIRAJATISED"
-],
-"21100": [
-"21100",
-"Teed"
-],
-"21110": [
-"21110",
-"Maanteed "
-],
-"21111": [
-"21111",
-"Kiirtee"
-],
-"30089": [
-"21111",
-"Maanteed"
-],
-"21112": [
-"21112",
-"Põhimaantee"
-],
-"21113": [
-"21113",
-"Tugimaantee"
-],
-"21114": [
-"21114",
-"Kõrvalmaantee"
-],
-"21115": [
-"21115",
-"Ühendusteed"
-],
-"21116": [
-"21116",
-"Talitee"
-],
-"21117": [
-"21117",
-"Tee juurde kuuluv parkla, puhkeala, ühissõiduki peatumiseks ettenähtud ala, piiri- või tollikontrolli ala jne"
-],
-"21118": [
-"21118",
-"Maantee ohutus-, signalisatsiooni-, turva-, side-, valgustus- või energiarajatis või tehnorajatis"
-],
-"21119": [
-"21119",
-"Muu teerajatis"
-],
-"21120": [
-"21120",
-"Tänavad"
-],
-"21121": [
-"21121",
-"Tänav"
-],
-"30090": [
-"21121",
-"Tänavad"
-],
-"21122": [
-"21122",
-"Tee"
-],
-"21123": [
-"21123",
-"Raudteele juurdepääsutee"
-],
-"21124": [
-"21124",
-"Jalgtee"
-],
-"21125": [
-"21125",
-"Jalgrattatee"
-],
-"21126": [
-"21126",
-"Parkla, väljak"
-],
-"21127": [
-"21127",
-"Muu plats või väljak"
-],
-"21128": [
-"21128",
-"Tee ja tänava ohutus-, signalisatsiooni-, turva-, side-, valgustus-, energiarajatis või tehnorajatis"
-],
-"21129": [
-"21129",
-"Muu tee- või tänavarajatis"
-],
-"21200": [
-"21200",
-"Raudteerajatised"
-],
-"21210": [
-"21210",
-"Raudtee"
-],
-"21211": [
-"21211",
-"Raudtee"
-],
-"21212": [
-"21212",
-"Jaamateed"
-],
-"21213": [
-"21213",
-"Meldepunkti rajatis"
-],
-"21214": [
-"21214",
-"Reisi- või kaubaplatvorm"
-],
-"21215": [
-"21215",
-"Ülekäigu- ja ülesõidukoht"
-],
-"21216": [
-"21216",
-"Raudtee ohutus-, signalisatsiooni-, turva-, side-, valgustus- või energiarajatis või tehnorajatis"
-],
-"21217": [
-"21217",
-"Raudtee kaitserajatis"
-],
-"21219": [
-"21219",
-"Muu raudtee sihtotstarbeliseks kasutamiseks vajalik rajatis"
-],
-"21220": [
-"21220",
-"Linnaraudtee"
-],
-"21221": [
-"21221",
-"Trammitee"
-],
-"21222": [
-"21222",
-"Jaamatee"
-],
-"30057": [
-"21222",
-"Linnaraudtee jaamatee"
-],
-"21223": [
-"21223",
-"Köisraudtee"
-],
-"30058": [
-"21224",
-"Linnaraudtee reisijateplatvorm"
-],
-"21224": [
-"21224",
-"Reisijateplatvorm,"
-],
-"30059": [
-"21225",
-"Linnaraudtee ülekäigu- ja ülesõidukoht"
-],
-"21225": [
-"21225",
-"Ülekäigu- ja ülesõidukoht"
-],
-"21226": [
-"21226",
-"Linnaraudtee ohutus-, signalisatsiooni-, turva-, side-, valgustus-, energia- või muu tehnorajatis"
-],
-"21229": [
-"21229",
-"Muu linnaraudtee sihtotstarbeliseks kasutamiseks vajalik rajatis"
-],
-"21300": [
-"21300",
-"Õhutranspordirajatised"
-],
-"21310": [
-"21310",
-"Lennuväljad"
-],
-"21311": [
-"21311",
-"Lennuvälja stardi- ja maandumisrada"
-],
-"21312": [
-"21312",
-"Lennuvälja teenindustee"
-],
-"21313": [
-"21313",
-"Aeronavigatsiooniline rajatis"
-],
-"21314": [
-"21314",
-"Lennuvälja ohutus-, signalisatsiooni-, turva-, side-, valgustus-, energia- või tehnorajatis"
-],
-"30060": [
-"21319",
-"Muu lennuväljarajatis"
-],
-"21319": [
-"21319",
-"Muu lennuväljarajatis (drenaaži- ja kuivendussüsteem)"
-],
-"21320": [
-"21320",
-"Lennuväljak"
-],
-"21321": [
-"21321",
-"Lennuväljaku stardi- ja maandumisrada"
-],
-"21322": [
-"21322",
-"Lennuväljaku muu tee"
-],
-"21323": [
-"21323",
-"Lennuväljaku aeronavigatsiooniline rajatis"
-],
-"21324": [
-"21324",
-"Lennuväljaku ohutus-, signalisatsiooni-, turva-, side-, valgustus-, energia- või tehnorajatis"
-],
-"21329": [
-"21329",
-"Muu lennuväljaku rajatis (drenaaži- ja kuivendussüsteem)"
-],
-"21400": [
-"21400",
-"Sillad, estakaadid, tunnelid"
-],
-"21410": [
-"21410",
-"Sillad ja estakaadid"
-],
-"21411": [
-"21411",
-"Maanteesild või estakaad"
-],
-"30091": [
-"21411",
-"Sillad ja estakaadid"
-],
-"21412": [
-"21412",
-"Raudteesild või estakaad"
-],
-"21413": [
-"21413",
-"Jalgteesild"
-],
-"21414": [
-"21414",
-"Silla või estakaadi turva-, side-, valgustus-, energia- või tehnorajatis"
-],
-"21419": [
-"21419",
-"Muu silla- või estakaadirajatis"
-],
-"21420": [
-"21420",
-"Tunnelid"
-],
-"21421": [
-"21421",
-"Teetunnel"
-],
-"30092": [
-"21421",
-"Tunnelid"
-],
-"21422": [
-"21422",
-"Raudteetunnel"
-],
-"21423": [
-"21423",
-"Jalgteetunnel"
-],
-"21424": [
-"21424",
-"Eriotstarbeline tunnel"
-],
-"21425": [
-"21425",
-"Tunneli ohutus-, turva-, side-, valgustus- ja energia- või tehnorajatis"
-],
-"21429": [
-"21429",
-"Muu tunnelirajatis"
-],
-"21500": [
-"21500",
-"Veetranspordirajatised"
-],
-"21510": [
-"21510",
-"Sadamarajatised ja kanalid"
-],
-"21511": [
-"21511",
-"Sadama kai"
-],
-"21512": [
-"21512",
-"Kalda- või ujuvramp"
-],
-"30020": [
-"21512",
-"Kalda- või ujuvramp, ujuvkai, slipp"
-],
-"21513": [
-"21513",
-"Lainemurdja, muul"
-],
-"21514": [
-"21514",
-"Navigatsioonimärk, v.a majakas"
-],
-"21515": [
-"21515",
-"Sadama juurde kuuluv galerii (reisijatele, kaubale)"
-],
-"21516": [
-"21516",
-"Laevatatav kanal, lüüs"
-],
-"21517": [
-"21517",
-"Sadama ohutus-, turva-, side-, valgustus- ja energia- või tehnorajatis"
-],
-"21518": [
-"21518",
-"Mere või siseveekogu põhja selle süvendamise teel rajatud laevakanal"
-],
-"21519": [
-"21519",
-"Muu sadama juurde kuuluv rajatis"
-],
-"21520": [
-"21520",
-"Tammid ja paisud"
-],
-"21521": [
-"21521",
-"Hüdroelektrijaama tamm"
-],
-"30021": [
-"21521",
-"Tamm"
-],
-"21522": [
-"21522",
-"Kaitsetamm"
-],
-"30022": [
-"21522",
-"Pais"
-],
-"21523": [
-"21523",
-"Kaldakindlustus"
-],
-"21524": [
-"21524",
-"Paisjärve tamm"
-],
-"21529": [
-"21529",
-"Muu tamm"
-],
-"21530": [
-"21530",
-"Akveduktid, niisutus- ja kuivendusrajatised "
-],
-"21531": [
-"21531",
-"Niisutusrajatis"
-],
-"21532": [
-"21532",
-"Kuivendusrajatis"
-],
-"21533": [
-"21533",
-"Veehoidla, bassein"
-],
-"21534": [
-"21534",
-"Akvedukt"
-],
-"21539": [
-"21539",
-"Muu niisutus- või kuivendusrajatis"
-],
-"30077": [
-"21600",
-"Köisteed"
-],
-"30078": [
-"21601",
-"Furnikulaarraudtee"
-],
-"30079": [
-"21602",
-"Köissõiduk"
-],
-"30080": [
-"21603",
-"Vedamislift"
-],
-"30081": [
-"21604",
-"Muu nimetamata köistee"
-],
-"22000": [
-"22000",
-"TORUJUHTMED, SIDE- JA ELEKTRILIINID"
-],
-"22100": [
-"22100",
-"Magistraaltorujuhtmed, side- ja elektriliinid"
-],
-"22110": [
-"22110",
-"Küttegaasi ülekandetorustik, ülerõhuga üle 16 bar  "
-],
-"22111": [
-"22111",
-"Gaasitorustik arvestusrõhuga 16-55 bar ja gaasitoru nimimõõduga kuni 200 DN"
-],
-"30023": [
-"22111",
-"Küttegaasi A kategooria jaotustorustik, ülerõhuga kuni 0,1 bar"
-],
-"22112": [
-"22112",
-"Gaasitorustik arvestusrõhuga 16-55 bar ja gaasitoru nimimõõduga 200-500 DN"
-],
-"30024": [
-"22112",
-"Küttegaasi  B ja C kategooria jaotustorustik, ülerõhuga üle 0,1 kuni 16 bar"
-],
-"22113": [
-"22113",
-"Gaasitorustik arvestusrõhuga 16-55 bar ja gaasitoru nimimõõduga üle 500 DN"
-],
-"30025": [
-"22113",
-"Küttegaasi D kategooria jaotustorustik, ülerõhuga üle 16 bar"
-],
-"22114": [
-"22114",
-"Gaasitorustik arvestusrõhuga 5-16 bar"
-],
-"30026": [
-"22114",
-"Küttegaasi jaotus- ja mõõtejaamad"
-],
-"22115": [
-"22115",
-"Gaasijaotus-, gaasimõõte- ja gaasireguleerjaam arvestusrõhuga 16-55 bar"
-],
-"30027": [
-"22115",
-"Küttegaasi tankimis- ja villimisjaamad maa-, vedel-, bio- ja tööstusgaasidele"
-],
-"22116": [
-"22116",
-"Gaasijaotus-, gaasimõõte- ja gaasireguleerjaam arvestusrõhuga kuni 16 bar"
-],
-"30028": [
-"22116",
-"LNG terminal"
-],
-"22117": [
-"22117",
-"Kraanisõlm ja sondisõlm arvestusrõhuga kuni 16 bar"
-],
-"30029": [
-"22117",
-"Küttegaasihoidla"
-],
-"22118": [
-"22118",
-"Gaasireguleerpunkt"
-],
-"30030": [
-"22118",
-"Küttegaasi kompressorjaam"
-],
-"30031": [
-"22119",
-"Küttegaasi muud ehitised"
-],
-"22119": [
-"22119",
-"Muu nimetamata gaasi ja vedelkütuse magistraaltorustiku rajatis"
-],
-"22120": [
-"22120",
-"Magistraalveetorustikud"
-],
-"22121": [
-"22121",
-"Magistraalveetorustik"
-],
-"30032": [
-"22122",
-"Pinnaveehaare"
-],
-"22122": [
-"22122",
-"Veehaare"
-],
-"22123": [
-"22123",
-"Kaugkütte magistraaltorustik"
-],
-"22124": [
-"22124",
-"Kaugjahutustorustik"
-],
-"22129": [
-"22129",
-"Muu nimetamata magistraalveetorustiku rajatis"
-],
-"22130": [
-"22130",
-"Side, raadio ja televisiooni magistraalsed ülekanderajatised "
-],
-"22131": [
-"22131",
-"Side, raadio või televisiooni magistraalne õhu- või kaabelülekandeliin või süsteem"
-],
-"22132": [
-"22132",
-"Raadio, televisiooni või mobiiltelefoni saate- või ülekandemast"
-],
-"22133": [
-"22133",
-"Muu side, raadio või televisiooni magistraalne ülekanderajatis"
-],
-"22140": [
-"22140",
-"Elektrienergia ülekandeliinid, välja arvatud kohalik elektrivalgustus (22240)"
-],
-"22141": [
-"22141",
-"35-110 kV õhuliin"
-],
-"30050": [
-"22141",
-"35–110 kV õhuliin"
-],
-"22142": [
-"22142",
-"110 kV ja kõrgema pingega õhuliin"
-],
-"22143": [
-"22143",
-"Maakaabelliin"
-],
-"22144": [
-"22144",
-"Veekaabelliin"
-],
-"22145": [
-"22145",
-"110 kV ja kõrgema pingega trafoalajaam"
-],
-"30061": [
-"22149",
-"Muu elektrienergia ülekandeliiniga seotud rajatis"
-],
-"22149": [
-"22149",
-"Muu elektrienergiaülekandeliiniga seotud rajatis"
-],
-"22200": [
-"22200",
-"Kohalikud torustikud, elektri- ja sideliinid"
-],
-"22210": [
-"22210",
-"Gaasijaotustorustikud"
-],
-"22211": [
-"22211",
-"Gaasijaotustorustik arvestusrõhuga kuni 5 bar"
-],
-"30062": [
-"22212",
-"Regulaatorpunkt arvestusrõhuga kuni 5 bar"
-],
-"22212": [
-"22212",
-"Rregulaatorpunkt arvestusrõhuga kuni 5 bar"
-],
-"22213": [
-"22213",
-"Gaasihoidla rajatis"
-],
-"22219": [
-"22219",
-"Muu gaasivarustusega seotud rajatis"
-],
-"22220": [
-"22220",
-"Veejaotustorustikud"
-],
-"22221": [
-"22221",
-"Külmaveetorustik"
-],
-"22222": [
-"22222",
-"Soojaveetorustik"
-],
-"22223": [
-"22223",
-"Kaugküttetorustik"
-],
-"22224": [
-"22224",
-"Purskkaev"
-],
-"30063": [
-"22224",
-"Puurauk"
-],
-"22225": [
-"22225",
-"Veetorn (rajatis)"
-],
-"22226": [
-"22226",
-"Kaev"
-],
-"30064": [
-"22226",
-"Salvkaev"
-],
-"22227": [
-"22227",
-"Tuletõrje veevõtukoht, sealhulgas hüdrant"
-],
-"30093": [
-"22227",
-"Tuletõrje veevõtukoht, sealhulgas hüdrant"
-],
-"30082": [
-"22228",
-"Puurkaev"
-],
-"22228": [
-"22228",
-"Puurkaev/-auk"
-],
-"22229": [
-"22229",
-"Muu kohaliku veetorustikuga seotud rajatis"
-],
-"22230": [
-"22230",
-"Kanalisatsiooniehitised "
-],
-"22231": [
-"22231",
-"Kanalisatsioonitorustik"
-],
-"22232": [
-"22232",
-"Heitvee kollektor või -hoidla"
-],
-"30065": [
-"22232",
-"Reovee kollektor "
-],
-"22233": [
-"22233",
-"Heitvee puhastusrajatis"
-],
-"30066": [
-"22233",
-"Reoveepuhasti"
-],
-"30083": [
-"22234",
-"Veepumpla"
-],
-"30084": [
-"22235",
-"Reoveepumpla"
-],
-"22239": [
-"22239",
-"Muu heitveerajatis"
-],
-"30067": [
-"22239",
-"Muu reovee kogumise, puhastamise ja heitvee suublasse juhtimisega seotud rajatis"
-],
-"22240": [
-"22240",
-"Elektrijaotusvõrgud ja sideliinid"
-],
-"22241": [
-"22241",
-"alla 1 kV jaotusvõrgu elektri õhuliin"
-],
-"30068": [
-"22241",
-"kuni 1 kV jaotusvõrgu elektri õhuliin"
-],
-"22242": [
-"22242",
-"1-35 kV jaotusvõrgu elektri õhuliin"
-],
-"30069": [
-"22242",
-"üle 1 kV ja kuni 35 kV jaotusvõrgu elektri õhuliin"
-],
-"22243": [
-"22243",
-"Elektri maakaabelliin"
-],
-"22244": [
-"22244",
-"Elektri merekaabelliin"
-],
-"22245": [
-"22245",
-"Side õhu- või kaabelliin"
-],
-"22246": [
-"22246",
-"6-35 kV alajaam ja jaotusseade"
-],
-"30070": [
-"22246",
-"6–35 kV alajaam ja jaotusseade"
-],
-"22247": [
-"22247",
-"Televisioonikaabel või ühisantenn"
-],
-"22249": [
-"22249",
-"Muu kohalik elektrijaotusvõrgu või sideliini rajatis"
-],
-"23000": [
-"23000",
-"TÖÖSTUSEHITISTE JUURDE KUULUVAD RAJATISED"
-],
-"23010": [
-"23010",
-"Maavarade kaevandamise ja töötlemise rajatised"
-],
-"23011": [
-"23011",
-"Kaevandusrajatis"
-],
-"23012": [
-"23012",
-"Karjäärirajatis"
-],
-"23020": [
-"23020",
-"Energiatööstuse rajatised"
-],
-"23021": [
-"23021",
-"Hüdroelektrijaama rajatis"
-],
-"23022": [
-"23022",
-"Soojuselektrijaama rajatis"
-],
-"23023": [
-"23023",
-"Tuuleelektrijaama rajatis"
-],
-"23024": [
-"23024",
-"Tuumaelektrijaama rajatis"
-],
-"23025": [
-"23025",
-"Korsten"
-],
-"23026": [
-"23026",
-"Päikeseelektrijaama rajatis"
-],
-"23027": [
-"23027",
-"Biogaasi- ja metaanijaama rajatis"
-],
-"23028": [
-"23028",
-"Energiasalvestusüksuse rajatis"
-],
-"23029": [
-"23029",
-"Muu energiatööstuse rajatis"
-],
-"23030": [
-"23030",
-"Keemiatööstuse rajatised"
-],
-"23031": [
-"23031",
-"Keemiatööstuse rajatis"
-],
-"23040": [
-"23040",
-"Rasketööstuse rajatis"
-],
-"23041": [
-"23041",
-"Rasketööstuse rajatis"
-],
-"23050": [
-"23050",
-"Muude tööstusharude rajatised"
-],
-"23051": [
-"23051",
-"Toiduainetetööstuse rajatis"
-],
-"23052": [
-"23052",
-"Ehitusmaterjalide ja -toodete tööstuse rajatis"
-],
-"23053": [
-"23053",
-"Kergetööstuse rajatis"
-],
-"23054": [
-"23054",
-"Puidutööstuse rajatis"
-],
-"23055": [
-"23055",
-"Masina- ja seadmetööstuse rajatis"
-],
-"23059": [
-"23059",
-"Muu nimetamata tööstusharu rajatis"
-],
-"24000": [
-"24000",
-"MUUD RAJATISED"
-],
-"24100": [
-"24100",
-"Spordi- ja puhkerajatised"
-],
-"24110": [
-"24110",
-"Staadionid ja spordiväljakud, välja arvatud mängu- ja golfiväljakud (24123), lõbustus- ja puhkepargid (24121)"
-],
-"24111": [
-"24111",
-"Spordiväljak või staadion"
-],
-"30071": [
-"24112",
-"Liuväli"
-],
-"24112": [
-"24112",
-"Liuväli, tenniseväljak"
-],
-"24113": [
-"24113",
-"Veespordirajatis, välisujula"
-],
-"24114": [
-"24114",
-"Motodroom, motoringrada"
-],
-"24115": [
-"24115",
-"Velodroom"
-],
-"24116": [
-"24116",
-"Hipodroom"
-],
-"24119": [
-"24119",
-"Muu nimetamata spordi- ja puhkerajatis"
-],
-"24120": [
-"24120",
-"Muud spordi- ja puhkerajatised"
-],
-"24121": [
-"24121",
-"Lõbustus- ja puhkepargirajatis"
-],
-"24122": [
-"24122",
-"Botaanikaaia ja loomaaiarajatis"
-],
-"24123": [
-"24123",
-"Golfiväljak"
-],
-"24124": [
-"24124",
-"Supelrannarajatis"
-],
-"24125": [
-"24125",
-"Trampliin"
-],
-"24126": [
-"24126",
-"Köistõstuk"
-],
-"24127": [
-"24127",
-"Rollerirada"
-],
-"24128": [
-"24128",
-"Spordiotstarbelise sadama rajatis või meremärk"
-],
-"24129": [
-"24129",
-"Muu nimetamata spordi- või puhkerajatis"
-],
-"24200": [
-"24200",
-"Muud rajatised"
-],
-"24210": [
-"24210",
-"Erirajatised"
-],
-"24211": [
-"24211",
-"Sisekaitse- või kaitseväerajatis"
-],
-"24212": [
-"24212",
-"Haljastus või heakorrastus"
-],
-"30072": [
-"24212",
-"Piirdeaiad ja väravad"
-],
-"24213": [
-"24213",
-"Monument, skulptuur, mälestusmärk"
-],
-"30073": [
-"24213",
-"Monument, skulptuur, mälestusmärk, purskkaev"
-],
-"24214": [
-"24214",
-"Eksponeerimisotstarbega rajatis"
-],
-"24215": [
-"24215",
-"Kalmistu"
-],
-"24216": [
-"24216",
-"Prügimäerajatis"
-],
-"24217": [
-"24217",
-"Sõnnikuhoidla rajatis"
-],
-"24218": [
-"24218",
-"Vesiviljelusehitis (tiigid, basseinid, kiirvoolukanalid, regulaatorid, veekogu kohandamiseks vajalikud rajatised, sisekasvatushooned, haudemajad, kalahoidlad, piirderajatised jms)"
-],
-"30074": [
-"24219",
-"Muu nimetamata rajatis"
-],
-"24219": [
-"24219",
-"Muu nimetamata rajatis, nagu näiteks varikatus jalgratastele või lahtine ootepaviljon või aed või piire"
-],
-"24220": [
-"24220",
-"Laomajandusrajatised"
-],
-"24221": [
-"24221",
-"Rajatis vedel- või gaasikütuse hoidmiseks"
-],
-"24222": [
-"24222",
-"Elevaator või rajatis puisteaine hoidmiseks"
-],
-"24223": [
-"24223",
-"Laoplats või laoväljak"
-],
-"24224": [
-"24224",
-"Rajatis põllumajandussaaduste või loomasööda hoidmiseks"
-],
-"24229": [
-"24229",
-"Muu nimetamata laomajandusrajatis"
-],
-"30085": [
-"24230",
-"Põllumajanduse, metsa-, jahi- ja kalamajandusrajatised"
-],
-"30086": [
-"24231",
-"Sõnnikuhoidla rajatis"
-],
-"30087": [
-"24232",
-"Vesiviljelusehitis (tiigid, basseinid, kiirvoolukanalid, regulaatorid, veekogu kohandamiseks vajalikud rajatised, sisekasvatushooned, haudemajad, kalahoidlad, piirderajatised jms)"
-],
-"30088": [
-"24233",
-"Rajatis põllumajandussaaduste või loomasööda hoidmiseks"
-],
-"90000": [
-"90000",
-"Eesvool"
-],
-"90001": [
-"90001",
-"Kuivenduskraav"
-],
-"90002": [
-"90002",
-"Truup"
-],
-"90003": [
-"90003",
-"Drenaažisüsteemi rajatis"
-],
-"90004": [
-"90004",
-"Niisutussüsteemi rajatis"
-],
-"90005": [
-"90005",
-"Regulaator"
-],
-"90006": [
-"90006",
-"Pumpla"
-],
-"90007": [
-"90007",
-"Paisjärv"
-],
-"90008": [
-"90008",
-"Maaparandussüsteemi teenindav tee"
-],
-"90009": [
-"90009",
-"Keskkonnakaitserajatis"
-]
+  "11000": ["11000", "ELAMUD"],
+  "11100": ["11100", "Ühe korteriga elamud"],
+  "11101": ["11101", "Üksikelamu"],
+  "11102": ["11102", "Ridaelamu või kaksikelamu sektsioon (juhul kui on oma katus ja sissepääs maapinnalt)"],
+  "11103": ["11103", "Suvila, aiamaja"],
+  "11200": ["11200", "Kahe või mitme korteriga elamud"],
+  "11210": ["11210", "Kahe korteriga elamud"],
+  "11211": ["11211", "Kaksikelamu"],
+  "30051": ["11212", "Kahe korteriga elamu"],
+  "11212": ["11212", "Muu kahe korteriga elamu"],
+  "11220": ["11220", "Kolme  või enama korteriga elamud"],
+  "11221": ["11221", "Ridaelamu"],
+  "11222": ["11222", "Muu kolme või enama korteriga elamu"],
+  "11300": ["11300", "Hoolekandeasutuste ja ühiselamute hooned"],
+  "11310": ["11310", "Hoolekandeasutuste hooned"],
+  "11311": ["11311", "Päevakeskus"],
+  "11312": ["11312", "Tugikodu"],
+  "11313": ["11313", "Varjupaik"],
+  "11314": ["11314", "Lastekodu"],
+  "11315": ["11315", "Noortekodu"],
+  "11316": ["11316", "Üldhooldekodu"],
+  "11317": ["11317", "Koolkodu"],
+  "11318": ["11318", "Sotsiaalse rehabilitatsiooni keskus"],
+  "11319": ["11319", "Erihooldekodu"],
+  "11320": ["11320", "Ühiselamud"],
+  "11321": ["11321", "Ühiselamu üliõpilastele või õpilastele"],
+  "11322": ["11322", "Ühiselamu teistele sotsiaalsetele gruppidele"],
+  "12000": ["12000", "MITTEELAMUD"],
+  "12100": ["12100", "Majutus- ja toitlustushooned"],
+  "12110": ["12110", "Majutushooned"],
+  "12111": ["12111", "Hotell"],
+  "30052": ["12111", "Hotell, motell, külalistemaja"],
+  "12112": ["12112", "Motell"],
+  "12113": ["12113", "Külalistemaja"],
+  "12114": ["12114", "Sanatooriumi majutushoone, pansionaat, mis ei kuulu haiglate ja muude ravihoonete gruppi"],
+  "12120": ["12120", "Lühiajalise majutuse hooned"],
+  "12121": ["12121", "Puhkeküla või puhkelaagri majutushoone"],
+  "12122": ["12122", "Puhkemaja"],
+  "12123": ["12123", "Hostel"],
+  "12129": ["12129", "Muu lühiajalise majutuse hoone"],
+  "12130": ["12130", "Toitlustushooned"],
+  "12131": ["12131", "Restoran"],
+  "12132": ["12132", "Kohvik, baar või söökla"],
+  "12133": ["12133", "Kiirtoitlustushoone"],
+  "12139": ["12139", "Muu toitlustushoone"],
+  "12200": ["12200", "Büroohooned"],
+  "12201": ["12201", "Büroohoone"],
+  "12202": ["12202", "Pangahoone"],
+  "12203": ["12203", "Administratiivhoone"],
+  "12204": ["12204", "Kohtuhoone"],
+  "12205": ["12205", "Konverentsihoone"],
+  "12206": ["12206", "Postimaja, sidejaoskond või postkontor"],
+  "12209": ["12209", "Muu büroo- või administratiivhoone"],
+  "12300": ["12300", "Kaubandus- ja teenindushooned"],
+  "12310": ["12310", "Kaubandushooned"],
+  "30053": ["12311", "Kaubandushoone"],
+  "12311": ["12311", "Toidukauplus"],
+  "12312": ["12312", "Kauplus, mis ei ole toidukauplus"],
+  "12313": ["12313", "Apteek"],
+  "30054": ["12314", "Kiosk"],
+  "12314": ["12314", "Kiosk toiduainete müügiks"],
+  "12315": ["12315", "Kiosk, mis ei ole toiduainete müügiks"],
+  "12316": ["12316", "Bensiinijaama hoone"],
+  "12317": ["12317", "Oksjoni-, turu- või näitusehall"],
+  "30055": ["12319", "Muu kaubandushoone"],
+  "12319": ["12319", "Muu kaubandushoone või kauplus"],
+  "12320": ["12320", "Hulgikaubandushooned"],
+  "12321": ["12321", "Toiduainete hulgiladu"],
+  "12322": ["12322", "Muu hulgiladu"],
+  "12330": ["12330", "Teenindushoone "],
+  "12331": ["12331", "Ilu- ja isikuteenust osutava ettevõtte hoone, nagu näiteks juuksuritöökoda, solaarium ja saun"],
+  "30056": ["12331", "Ilu- ja isikuteenuste  hoone"],
+  "12332": ["12332", "Sõidukite teeninduse hoone"],
+  "12333": ["12333", "Keemiline puhastus, pesumaja"],
+  "12339": ["12339", "Muu teenindushoone"],
+  "12400": ["12400", "Transpordihooned"],
+  "12410": ["12410", "Terminalid"],
+  "12411": ["12411", "Lennujaam"],
+  "30033": ["12411", "Lennujaama hoone"],
+  "12412": ["12412", "Lennukiangaar"],
+  "12413": ["12413", "Raudteejaam"],
+  "30034": ["12413", "Raudteejaama hoone"],
+  "12414": ["12414", "Raudtee infrastruktuuri hoone"],
+  "12415": ["12415", "Bussijaam"],
+  "30035": ["12415", "Bussijaama hoone"],
+  "12416": ["12416", "Sadamahoone"],
+  "12417": ["12417", "Lennujuhtimiskeskuse hoone"],
+  "30036": ["12419", "Muu terminalihoone"],
+  "12419": ["12419", "Muu transpordihoone, nagu näiteks tuletorn"],
+  "12420": ["12420", "Sidehooned"],
+  "12421": ["12421", "Raadio-, televisiooni saate- või võimenduskeskuse hoone"],
+  "12422": ["12422", "Telekommunikatsioonivõrgu hoone"],
+  "12429": ["12429", "Muu sidehoone, nagu näiteks taksofoni kabiin"],
+  "12430": ["12430", "Garaažid"],
+  "12431": ["12431", "Allmaa- või pealmaagaraaž"],
+  "30037": ["12431", "Garaaž"],
+  "12432": ["12432", "Parkimishoone"],
+  "30038": ["12432", "Parkimismaja"],
+  "30039": ["12439", "Muu garaaž"],
+  "12439": ["12439", "Muu garaaž, nagu näiteks jalgrattahoidla"],
+  "12500": ["12500", "Tööstus- ja laohooned"],
+  "12510": ["12510", "Tööstushooned"],
+  "12511": ["12511", "Maavarade kaevandamise ja töötlemise hoone"],
+  "12512": ["12512", "Energeetikaettevõtte hoone"],
+  "30040": ["12512", "Energeetikatööstuse hoone"],
+  "12513": ["12513", "Keemiatööstuse hoone"],
+  "12514": ["12514", "Toiduainetetööstuse hoone"],
+  "12515": ["12515", "Ehitusmaterjalide ja -toodete tööstuse hoone"],
+  "12516": ["12516", "Kergetööstuse hoone"],
+  "12517": ["12517", "Puidutööstuse hoone"],
+  "12518": ["12518", "Masina- ja seadmetööstuse hoone"],
+  "12519": ["12519", "Muu tööstusharu tootmishoone"],
+  "30041": ["12519", "Muu tööstushoone"],
+  "12520": ["12520", "Hoidlad ja laohooned"],
+  "30042": ["12521", "Toiduainete laohoone"],
+  "12521": ["12521", "Toiduainetetööstuse laohoone"],
+  "12522": ["12522", "Konteinerite terminali hoone"],
+  "12523": ["12523", "Vedelkütuse-, gaasi- jm terminali hoidlahoone"],
+  "30043": ["12523", "Vedelkütuse-, küttegaasi- jm terminali hoidlahoone"],
+  "12524": ["12524", "Elevaator või puisteaine hoidlahoone"],
+  "30044": ["12525", "Külmhoone"],
+  "12525": ["12525", "Külmhoone või eriladu"],
+  "30045": ["12529", "Muu laohoone"],
+  "12529": ["12529", "Muu tööstuse laohoone"],
+  "12600": ["12600", "Meelelahutus-, haridus- tervishoiu- ja muud avalikud hooned"],
+  "12610": ["12610", "Meelelahutushooned"],
+  "12611": ["12611", "Teater"],
+  "30046": ["12611", "Teater, kino, kontserdi- ja universaalsaalide hoone"],
+  "12612": ["12612", "Kino"],
+  "12613": ["12613", "Kontserdi- ja universaalsaalide hoone"],
+  "12614": ["12614", "Tantsusaal, diskoteek, kasiino (kehtetu alates 27.05.2008)"],
+  "12615": ["12615", "Klubi, rahvamaja"],
+  "12616": ["12616", "Tantsusaal, diskoteek"],
+  "30075": ["12616", "Tantsusaal, diskoteek, ööklubi"],
+  "12617": ["12617", "Kasiino"],
+  "30076": ["12618", "Loomaaia või botaanikaaia hoone"],
+  "30047": ["12619", "Muu meelelahutushoone"],
+  "12619": ["12619", "Muu meelelahutushoone, nagu näiteks loomaaia ja botaanikaaia hoone"],
+  "12620": ["12620", "Muuseumi- ja raamatukoguhooned"],
+  "12621": ["12621", "Muuseum"],
+  "30048": ["12621", "Muuseum, kunstigalerii"],
+  "12622": ["12622", "Kunstigalerii"],
+  "12623": ["12623", "Raamatukogu"],
+  "12624": ["12624", "Arhiiv"],
+  "12625": ["12625", "Teaduskeskus"],
+  "12630": ["12630", "Haridus- ja teadushooned"],
+  "12631": ["12631", "Lastehoiu, lasteaia, lasteaed-algkooli õppehoone"],
+  "30049": ["12632", "Põhikooli või gümnaasiumi õppehoone"],
+  "12632": ["12632", "Põhikooli või gümnaasiumi õppehoonehoone"],
+  "12633": ["12633", "Kutseõppeasutuse õppehoone"],
+  "12634": ["12634", "Ülikooli, rakenduskõrgkooli õppehoone"],
+  "12635": ["12635", "Teadus- ja metoodikaasutuse hoone"],
+  "12636": ["12636", "Huvialakooli õppehoone"],
+  "12637": ["12637", "Täiendus- või ümberõppeasutuse hoone"],
+  "30000": ["12639", "Muu haridus- või teadushoone"],
+  "12639": ["12639", "Muu haridus- või teadushoone, nagu näiteks labor, õppetöökoda, ilmajaam ja observatoorium"],
+  "12640": ["12640", "Haiglad ja muud ravihooned"],
+  "30001": ["12641", "Haigla"],
+  "12641": ["12641", "Haigla (üld-, eri- või ülkooli juures asuv haigla)"],
+  "12642": ["12642", "Kaitseväehaigla"],
+  "12643": ["12643", "Kinnipidamiskoha haigla"],
+  "30002": ["12644", "Ambulatoorse arstiabi osutamise hoone"],
+  "12644": ["12644", "Haiglavälise arstiabi osutamise hoone (perearstikeskus, polikliinik, ambulatoorium)"],
+  "12645": ["12645", "Sanatoorium"],
+  "30003": ["12645", "Sanatoorium, spaa"],
+  "30004": ["12646", "Veterinaarkliinik"],
+  "12646": ["12646", "Veterinaarravila"],
+  "30005": ["12649", "Muu tervishoiuhoone"],
+  "12649": ["12649", "Muu tervishoiuhoone, nagu näiteks vereülekandejaam"],
+  "12650": ["12650", "Spordihooned"],
+  "30006": ["12651", "Spordihall, võimla"],
+  "12651": ["12651", "Spordihall, võimla (kohtadega pealtvaatajatele)"],
+  "12652": ["12652", "Spordihall, võimla (puuduvad kohad pealtvaatajatele)"],
+  "12653": ["12653", "Siseujula"],
+  "12654": ["12654", "Jäähall"],
+  "12655": ["12655", "Maneež"],
+  "12656": ["12656", "Lasketiir"],
+  "30007": ["12656", "Lasketiiru hoone"],
+  "12659": ["12659", "Muu spordihoone"],
+  "12700": ["12700", "Muud mitteelamud"],
+  "12710": ["12710", "Põllumajanduse, metsa-, jahi- ja kalamajandushooned"],
+  "12711": ["12711", "Loomakasvatushoone, sealhulgas karuslooma- või linnukasvatus"],
+  "12712": ["12712", "Kartuli-, köögivilja- või söödajuurviljahoidla"],
+  "12713": ["12713", "Puuvilja-, marja- või teraviljahoidla"],
+  "12714": ["12714", "Teraviljakuivati"],
+  "12715": ["12715", "Heinaküün"],
+  "30008": ["12715", "Loomasööda hoidla"],
+  "12716": ["12716", "Põllumajandusmasinate remonditöökoda või hoiukuur"],
+  "12717": ["12717", "Metsa-, jahi- või kalamajandushoone"],
+  "12718": ["12718", "Mineraalväetiste või taimekaitsevahendite hoidla"],
+  "30009": ["12719", "Muu põllu-, metsa-, jahi- või kalamajandushoone"],
+  "12719": ["12719", "Muu põllu-, metsa-, jahi- või kalamajandushoone, sealhulgas kasvuhoone"],
+  "12720": ["12720", "Kultus- ja tavandihooned"],
+  "12721": ["12721", "Kirik, katedraal, mošee, sünagoog, palvemaja või kabel"],
+  "30010": ["12721", "Kirik, katedraal, mošee, sünagoog, palvemaja või kabel"],
+  "12722": ["12722", "Kogudushoone"],
+  "12723": ["12723", "Krematoorium"],
+  "12724": ["12724", "Tavandihoone"],
+  "12729": ["12729", "Muu kultuse- või tavandihoone"],
+  "12730": ["12730", "Ajaloolised või kaitse all olevad hooned"],
+  "30011": ["12731", "Ajalooline või kaitse all olev  hoone"],
+  "12731": ["12731", "Ajalooline või kaitse all olev eksponeeritav hoone"],
+  "12732": ["12732", "Muinsuskaitse all olev vare"],
+  "12740": ["12740", "Erihooned"],
+  "30012": ["12741", "Reoveepuhasti hoone"],
+  "12741": ["12741", "Sisekaitse- või kaitseväehoone"],
+  "30013": ["12742", "Karistusasutuse hoone"],
+  "12742": ["12742", "Karistusasutuse hoone, vangla või koloonia"],
+  "30014": ["12743", "Päästeteenistuse hoone"],
+  "12743": ["12743", "Päästeteenistuse hoone, tuletõrjedepoo"],
+  "30015": ["12744", "Elamu, kooli vms abihoone"],
+  "12744": ["12744", "Elamu, talu, kooli vms majapidamisabihoone, nagu näiteks kuur, individuaalgaraaž ja saun"],
+  "12745": ["12745", "Katlamaja, boilerjaam"],
+  "30016": ["12746", "Kaevumaja"],
+  "12746": ["12746", "Pumbamaja, kaevumaja"],
+  "12747": ["12747", "Hoone loodushoiu- või puhastusseadmetele"],
+  "30017": ["12747", "Veepuhastusjaama hoone"],
+  "12748": ["12748", "Jäätmehoidla hoone"],
+  "30018": ["12748", "Jäätmekäitluse hoone"],
+  "30019": ["12749", "Muu erihoone"],
+  "12749": ["12749", "Muu erihoone, nagu näiteks varjend"],
+  "12750": ["12750", "Erihooned"],
+  "12751": ["12751", "Kaugjahutusjaam"],
+  "12752": ["12752", "Soojuspumbajaam"],
+  "21000": ["21000", "TRANSPORDIRAJATISED"],
+  "21100": ["21100", "Teed"],
+  "21110": ["21110", "Maanteed "],
+  "21111": ["21111", "Kiirtee"],
+  "30089": ["21111", "Maanteed"],
+  "21112": ["21112", "Põhimaantee"],
+  "21113": ["21113", "Tugimaantee"],
+  "21114": ["21114", "Kõrvalmaantee"],
+  "21115": ["21115", "Ühendusteed"],
+  "21116": ["21116", "Talitee"],
+  "21117": ["21117", "Tee juurde kuuluv parkla, puhkeala, ühissõiduki peatumiseks ettenähtud ala, piiri- või tollikontrolli ala jne"],
+  "21118": ["21118", "Maantee ohutus-, signalisatsiooni-, turva-, side-, valgustus- või energiarajatis või tehnorajatis"],
+  "21119": ["21119", "Muu teerajatis"],
+  "21120": ["21120", "Tänavad"],
+  "21121": ["21121", "Tänav"],
+  "30090": ["21121", "Tänavad"],
+  "21122": ["21122", "Tee"],
+  "21123": ["21123", "Raudteele juurdepääsutee"],
+  "21124": ["21124", "Jalgtee"],
+  "21125": ["21125", "Jalgrattatee"],
+  "21126": ["21126", "Parkla, väljak"],
+  "21127": ["21127", "Muu plats või väljak"],
+  "21128": ["21128", "Tee ja tänava ohutus-, signalisatsiooni-, turva-, side-, valgustus-, energiarajatis või tehnorajatis"],
+  "21129": ["21129", "Muu tee- või tänavarajatis"],
+  "21200": ["21200", "Raudteerajatised"],
+  "21210": ["21210", "Raudtee"],
+  "21211": ["21211", "Raudtee"],
+  "21212": ["21212", "Jaamateed"],
+  "21213": ["21213", "Meldepunkti rajatis"],
+  "21214": ["21214", "Reisi- või kaubaplatvorm"],
+  "21215": ["21215", "Ülekäigu- ja ülesõidukoht"],
+  "21216": ["21216", "Raudtee ohutus-, signalisatsiooni-, turva-, side-, valgustus- või energiarajatis või tehnorajatis"],
+  "21217": ["21217", "Raudtee kaitserajatis"],
+  "21219": ["21219", "Muu raudtee sihtotstarbeliseks kasutamiseks vajalik rajatis"],
+  "21220": ["21220", "Linnaraudtee"],
+  "21221": ["21221", "Trammitee"],
+  "21222": ["21222", "Jaamatee"],
+  "30057": ["21222", "Linnaraudtee jaamatee"],
+  "21223": ["21223", "Köisraudtee"],
+  "30058": ["21224", "Linnaraudtee reisijateplatvorm"],
+  "21224": ["21224", "Reisijateplatvorm,"],
+  "30059": ["21225", "Linnaraudtee ülekäigu- ja ülesõidukoht"],
+  "21225": ["21225", "Ülekäigu- ja ülesõidukoht"],
+  "21226": ["21226", "Linnaraudtee ohutus-, signalisatsiooni-, turva-, side-, valgustus-, energia- või muu tehnorajatis"],
+  "21229": ["21229", "Muu linnaraudtee sihtotstarbeliseks kasutamiseks vajalik rajatis"],
+  "21300": ["21300", "Õhutranspordirajatised"],
+  "21310": ["21310", "Lennuväljad"],
+  "21311": ["21311", "Lennuvälja stardi- ja maandumisrada"],
+  "21312": ["21312", "Lennuvälja teenindustee"],
+  "21313": ["21313", "Aeronavigatsiooniline rajatis"],
+  "21314": ["21314", "Lennuvälja ohutus-, signalisatsiooni-, turva-, side-, valgustus-, energia- või tehnorajatis"],
+  "30060": ["21319", "Muu lennuväljarajatis"],
+  "21319": ["21319", "Muu lennuväljarajatis (drenaaži- ja kuivendussüsteem)"],
+  "21320": ["21320", "Lennuväljak"],
+  "21321": ["21321", "Lennuväljaku stardi- ja maandumisrada"],
+  "21322": ["21322", "Lennuväljaku muu tee"],
+  "21323": ["21323", "Lennuväljaku aeronavigatsiooniline rajatis"],
+  "21324": ["21324", "Lennuväljaku ohutus-, signalisatsiooni-, turva-, side-, valgustus-, energia- või tehnorajatis"],
+  "21329": ["21329", "Muu lennuväljaku rajatis (drenaaži- ja kuivendussüsteem)"],
+  "21400": ["21400", "Sillad, estakaadid, tunnelid"],
+  "21410": ["21410", "Sillad ja estakaadid"],
+  "21411": ["21411", "Maanteesild või estakaad"],
+  "30091": ["21411", "Sillad ja estakaadid"],
+  "21412": ["21412", "Raudteesild või estakaad"],
+  "21413": ["21413", "Jalgteesild"],
+  "21414": ["21414", "Silla või estakaadi turva-, side-, valgustus-, energia- või tehnorajatis"],
+  "21419": ["21419", "Muu silla- või estakaadirajatis"],
+  "21420": ["21420", "Tunnelid"],
+  "21421": ["21421", "Teetunnel"],
+  "30092": ["21421", "Tunnelid"],
+  "21422": ["21422", "Raudteetunnel"],
+  "21423": ["21423", "Jalgteetunnel"],
+  "21424": ["21424", "Eriotstarbeline tunnel"],
+  "21425": ["21425", "Tunneli ohutus-, turva-, side-, valgustus- ja energia- või tehnorajatis"],
+  "21429": ["21429", "Muu tunnelirajatis"],
+  "21500": ["21500", "Veetranspordirajatised"],
+  "21510": ["21510", "Sadamarajatised ja kanalid"],
+  "21511": ["21511", "Sadama kai"],
+  "21512": ["21512", "Kalda- või ujuvramp"],
+  "30020": ["21512", "Kalda- või ujuvramp, ujuvkai, slipp"],
+  "21513": ["21513", "Lainemurdja, muul"],
+  "21514": ["21514", "Navigatsioonimärk, v.a majakas"],
+  "21515": ["21515", "Sadama juurde kuuluv galerii (reisijatele, kaubale)"],
+  "21516": ["21516", "Laevatatav kanal, lüüs"],
+  "21517": ["21517", "Sadama ohutus-, turva-, side-, valgustus- ja energia- või tehnorajatis"],
+  "21518": ["21518", "Mere või siseveekogu põhja selle süvendamise teel rajatud laevakanal"],
+  "21519": ["21519", "Muu sadama juurde kuuluv rajatis"],
+  "21520": ["21520", "Tammid ja paisud"],
+  "21521": ["21521", "Hüdroelektrijaama tamm"],
+  "30021": ["21521", "Tamm"],
+  "21522": ["21522", "Kaitsetamm"],
+  "30022": ["21522", "Pais"],
+  "21523": ["21523", "Kaldakindlustus"],
+  "21524": ["21524", "Paisjärve tamm"],
+  "21529": ["21529", "Muu tamm"],
+  "21530": ["21530", "Akveduktid, niisutus- ja kuivendusrajatised "],
+  "21531": ["21531", "Niisutusrajatis"],
+  "21532": ["21532", "Kuivendusrajatis"],
+  "21533": ["21533", "Veehoidla, bassein"],
+  "21534": ["21534", "Akvedukt"],
+  "21539": ["21539", "Muu niisutus- või kuivendusrajatis"],
+  "30077": ["21600", "Köisteed"],
+  "30078": ["21601", "Furnikulaarraudtee"],
+  "30079": ["21602", "Köissõiduk"],
+  "30080": ["21603", "Vedamislift"],
+  "30081": ["21604", "Muu nimetamata köistee"],
+  "22000": ["22000", "TORUJUHTMED, SIDE- JA ELEKTRILIINID"],
+  "22100": ["22100", "Magistraaltorujuhtmed, side- ja elektriliinid"],
+  "22110": ["22110", "Küttegaasi ülekandetorustik, ülerõhuga üle 16 bar  "],
+  "22111": ["22111", "Gaasitorustik arvestusrõhuga 16-55 bar ja gaasitoru nimimõõduga kuni 200 DN"],
+  "30023": ["22111", "Küttegaasi A kategooria jaotustorustik, ülerõhuga kuni 0,1 bar"],
+  "22112": ["22112", "Gaasitorustik arvestusrõhuga 16-55 bar ja gaasitoru nimimõõduga 200-500 DN"],
+  "30024": ["22112", "Küttegaasi  B ja C kategooria jaotustorustik, ülerõhuga üle 0,1 kuni 16 bar"],
+  "22113": ["22113", "Gaasitorustik arvestusrõhuga 16-55 bar ja gaasitoru nimimõõduga üle 500 DN"],
+  "30025": ["22113", "Küttegaasi D kategooria jaotustorustik, ülerõhuga üle 16 bar"],
+  "22114": ["22114", "Gaasitorustik arvestusrõhuga 5-16 bar"],
+  "30026": ["22114", "Küttegaasi jaotus- ja mõõtejaamad"],
+  "22115": ["22115", "Gaasijaotus-, gaasimõõte- ja gaasireguleerjaam arvestusrõhuga 16-55 bar"],
+  "30027": ["22115", "Küttegaasi tankimis- ja villimisjaamad maa-, vedel-, bio- ja tööstusgaasidele"],
+  "22116": ["22116", "Gaasijaotus-, gaasimõõte- ja gaasireguleerjaam arvestusrõhuga kuni 16 bar"],
+  "30028": ["22116", "LNG terminal"],
+  "22117": ["22117", "Kraanisõlm ja sondisõlm arvestusrõhuga kuni 16 bar"],
+  "30029": ["22117", "Küttegaasihoidla"],
+  "22118": ["22118", "Gaasireguleerpunkt"],
+  "30030": ["22118", "Küttegaasi kompressorjaam"],
+  "30031": ["22119", "Küttegaasi muud ehitised"],
+  "22119": ["22119", "Muu nimetamata gaasi ja vedelkütuse magistraaltorustiku rajatis"],
+  "22120": ["22120", "Magistraalveetorustikud"],
+  "22121": ["22121", "Magistraalveetorustik"],
+  "30032": ["22122", "Pinnaveehaare"],
+  "22122": ["22122", "Veehaare"],
+  "22123": ["22123", "Kaugkütte magistraaltorustik"],
+  "22124": ["22124", "Kaugjahutustorustik"],
+  "22129": ["22129", "Muu nimetamata magistraalveetorustiku rajatis"],
+  "22130": ["22130", "Side, raadio ja televisiooni magistraalsed ülekanderajatised "],
+  "22131": ["22131", "Side, raadio või televisiooni magistraalne õhu- või kaabelülekandeliin või süsteem"],
+  "22132": ["22132", "Raadio, televisiooni või mobiiltelefoni saate- või ülekandemast"],
+  "22133": ["22133", "Muu side, raadio või televisiooni magistraalne ülekanderajatis"],
+  "22140": ["22140", "Elektrienergia ülekandeliinid, välja arvatud kohalik elektrivalgustus (22240)"],
+  "22141": ["22141", "35-110 kV õhuliin"],
+  "30050": ["22141", "35–110 kV õhuliin"],
+  "22142": ["22142", "110 kV ja kõrgema pingega õhuliin"],
+  "22143": ["22143", "Maakaabelliin"],
+  "22144": ["22144", "Veekaabelliin"],
+  "22145": ["22145", "110 kV ja kõrgema pingega trafoalajaam"],
+  "30061": ["22149", "Muu elektrienergia ülekandeliiniga seotud rajatis"],
+  "22149": ["22149", "Muu elektrienergiaülekandeliiniga seotud rajatis"],
+  "22200": ["22200", "Kohalikud torustikud, elektri- ja sideliinid"],
+  "22210": ["22210", "Gaasijaotustorustikud"],
+  "22211": ["22211", "Gaasijaotustorustik arvestusrõhuga kuni 5 bar"],
+  "30062": ["22212", "Regulaatorpunkt arvestusrõhuga kuni 5 bar"],
+  "22212": ["22212", "Rregulaatorpunkt arvestusrõhuga kuni 5 bar"],
+  "22213": ["22213", "Gaasihoidla rajatis"],
+  "22219": ["22219", "Muu gaasivarustusega seotud rajatis"],
+  "22220": ["22220", "Veejaotustorustikud"],
+  "22221": ["22221", "Külmaveetorustik"],
+  "22222": ["22222", "Soojaveetorustik"],
+  "22223": ["22223", "Kaugküttetorustik"],
+  "22224": ["22224", "Purskkaev"],
+  "30063": ["22224", "Puurauk"],
+  "22225": ["22225", "Veetorn (rajatis)"],
+  "22226": ["22226", "Kaev"],
+  "30064": ["22226", "Salvkaev"],
+  "22227": ["22227", "Tuletõrje veevõtukoht, sealhulgas hüdrant"],
+  "30093": ["22227", "Tuletõrje veevõtukoht, sealhulgas hüdrant"],
+  "30082": ["22228", "Puurkaev"],
+  "22228": ["22228", "Puurkaev/-auk"],
+  "22229": ["22229", "Muu kohaliku veetorustikuga seotud rajatis"],
+  "22230": ["22230", "Kanalisatsiooniehitised "],
+  "22231": ["22231", "Kanalisatsioonitorustik"],
+  "22232": ["22232", "Heitvee kollektor või -hoidla"],
+  "30065": ["22232", "Reovee kollektor "],
+  "22233": ["22233", "Heitvee puhastusrajatis"],
+  "30066": ["22233", "Reoveepuhasti"],
+  "30083": ["22234", "Veepumpla"],
+  "30084": ["22235", "Reoveepumpla"],
+  "22239": ["22239", "Muu heitveerajatis"],
+  "30067": ["22239", "Muu reovee kogumise, puhastamise ja heitvee suublasse juhtimisega seotud rajatis"],
+  "22240": ["22240", "Elektrijaotusvõrgud ja sideliinid"],
+  "22241": ["22241", "alla 1 kV jaotusvõrgu elektri õhuliin"],
+  "30068": ["22241", "kuni 1 kV jaotusvõrgu elektri õhuliin"],
+  "22242": ["22242", "1-35 kV jaotusvõrgu elektri õhuliin"],
+  "30069": ["22242", "üle 1 kV ja kuni 35 kV jaotusvõrgu elektri õhuliin"],
+  "22243": ["22243", "Elektri maakaabelliin"],
+  "22244": ["22244", "Elektri merekaabelliin"],
+  "22245": ["22245", "Side õhu- või kaabelliin"],
+  "22246": ["22246", "6-35 kV alajaam ja jaotusseade"],
+  "30070": ["22246", "6–35 kV alajaam ja jaotusseade"],
+  "22247": ["22247", "Televisioonikaabel või ühisantenn"],
+  "22249": ["22249", "Muu kohalik elektrijaotusvõrgu või sideliini rajatis"],
+  "23000": ["23000", "TÖÖSTUSEHITISTE JUURDE KUULUVAD RAJATISED"],
+  "23010": ["23010", "Maavarade kaevandamise ja töötlemise rajatised"],
+  "23011": ["23011", "Kaevandusrajatis"],
+  "23012": ["23012", "Karjäärirajatis"],
+  "23020": ["23020", "Energiatööstuse rajatised"],
+  "23021": ["23021", "Hüdroelektrijaama rajatis"],
+  "23022": ["23022", "Soojuselektrijaama rajatis"],
+  "23023": ["23023", "Tuuleelektrijaama rajatis"],
+  "23024": ["23024", "Tuumaelektrijaama rajatis"],
+  "23025": ["23025", "Korsten"],
+  "23026": ["23026", "Päikeseelektrijaama rajatis"],
+  "23027": ["23027", "Biogaasi- ja metaanijaama rajatis"],
+  "23028": ["23028", "Energiasalvestusüksuse rajatis"],
+  "23029": ["23029", "Muu energiatööstuse rajatis"],
+  "23030": ["23030", "Keemiatööstuse rajatised"],
+  "23031": ["23031", "Keemiatööstuse rajatis"],
+  "23040": ["23040", "Rasketööstuse rajatis"],
+  "23041": ["23041", "Rasketööstuse rajatis"],
+  "23050": ["23050", "Muude tööstusharude rajatised"],
+  "23051": ["23051", "Toiduainetetööstuse rajatis"],
+  "23052": ["23052", "Ehitusmaterjalide ja -toodete tööstuse rajatis"],
+  "23053": ["23053", "Kergetööstuse rajatis"],
+  "23054": ["23054", "Puidutööstuse rajatis"],
+  "23055": ["23055", "Masina- ja seadmetööstuse rajatis"],
+  "23059": ["23059", "Muu nimetamata tööstusharu rajatis"],
+  "24000": ["24000", "MUUD RAJATISED"],
+  "24100": ["24100", "Spordi- ja puhkerajatised"],
+  "24110": ["24110", "Staadionid ja spordiväljakud, välja arvatud mängu- ja golfiväljakud (24123), lõbustus- ja puhkepargid (24121)"],
+  "24111": ["24111", "Spordiväljak või staadion"],
+  "30071": ["24112", "Liuväli"],
+  "24112": ["24112", "Liuväli, tenniseväljak"],
+  "24113": ["24113", "Veespordirajatis, välisujula"],
+  "24114": ["24114", "Motodroom, motoringrada"],
+  "24115": ["24115", "Velodroom"],
+  "24116": ["24116", "Hipodroom"],
+  "24119": ["24119", "Muu nimetamata spordi- ja puhkerajatis"],
+  "24120": ["24120", "Muud spordi- ja puhkerajatised"],
+  "24121": ["24121", "Lõbustus- ja puhkepargirajatis"],
+  "24122": ["24122", "Botaanikaaia ja loomaaiarajatis"],
+  "24123": ["24123", "Golfiväljak"],
+  "24124": ["24124", "Supelrannarajatis"],
+  "24125": ["24125", "Trampliin"],
+  "24126": ["24126", "Köistõstuk"],
+  "24127": ["24127", "Rollerirada"],
+  "24128": ["24128", "Spordiotstarbelise sadama rajatis või meremärk"],
+  "24129": ["24129", "Muu nimetamata spordi- või puhkerajatis"],
+  "24200": ["24200", "Muud rajatised"],
+  "24210": ["24210", "Erirajatised"],
+  "24211": ["24211", "Sisekaitse- või kaitseväerajatis"],
+  "24212": ["24212", "Haljastus või heakorrastus"],
+  "30072": ["24212", "Piirdeaiad ja väravad"],
+  "24213": ["24213", "Monument, skulptuur, mälestusmärk"],
+  "30073": ["24213", "Monument, skulptuur, mälestusmärk, purskkaev"],
+  "24214": ["24214", "Eksponeerimisotstarbega rajatis"],
+  "24215": ["24215", "Kalmistu"],
+  "24216": ["24216", "Prügimäerajatis"],
+  "24217": ["24217", "Sõnnikuhoidla rajatis"],
+  "24218": ["24218", "Vesiviljelusehitis (tiigid, basseinid, kiirvoolukanalid, regulaatorid, veekogu kohandamiseks vajalikud rajatised, sisekasvatushooned, haudemajad, kalahoidlad, piirderajatised jms)"],
+  "30074": ["24219", "Muu nimetamata rajatis"],
+  "24219": ["24219", "Muu nimetamata rajatis, nagu näiteks varikatus jalgratastele või lahtine ootepaviljon või aed või piire"],
+  "24220": ["24220", "Laomajandusrajatised"],
+  "24221": ["24221", "Rajatis vedel- või gaasikütuse hoidmiseks"],
+  "24222": ["24222", "Elevaator või rajatis puisteaine hoidmiseks"],
+  "24223": ["24223", "Laoplats või laoväljak"],
+  "24224": ["24224", "Rajatis põllumajandussaaduste või loomasööda hoidmiseks"],
+  "24229": ["24229", "Muu nimetamata laomajandusrajatis"],
+  "30085": ["24230", "Põllumajanduse, metsa-, jahi- ja kalamajandusrajatised"],
+  "30086": ["24231", "Sõnnikuhoidla rajatis"],
+  "30087": ["24232", "Vesiviljelusehitis (tiigid, basseinid, kiirvoolukanalid, regulaatorid, veekogu kohandamiseks vajalikud rajatised, sisekasvatushooned, haudemajad, kalahoidlad, piirderajatised jms)"],
+  "30088": ["24233", "Rajatis põllumajandussaaduste või loomasööda hoidmiseks"],
+  "90000": ["90000", "Eesvool"],
+  "90001": ["90001", "Kuivenduskraav"],
+  "90002": ["90002", "Truup"],
+  "90003": ["90003", "Drenaažisüsteemi rajatis"],
+  "90004": ["90004", "Niisutussüsteemi rajatis"],
+  "90005": ["90005", "Regulaator"],
+  "90006": ["90006", "Pumpla"],
+  "90007": ["90007", "Paisjärv"],
+  "90008": ["90008", "Maaparandussüsteemi teenindav tee"],
+  "90009": ["90009", "Keskkonnakaitserajatis"]
 }
 }
