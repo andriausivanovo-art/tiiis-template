@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --paper:#F6F7F5; --sheet:#FFFFFF; --ink:#1E2A2F; --muted:#5E6B70; --rule:#D5DBDC; --focus:#1F5F8B;
+  --t-prasymas:#7A4FA0; --t-leidimas_nauja:#D9480F; --t-leidimas_rekonstrukcija:#A86A12;
+  --t-leidimas_atnaujinimas:#3B6E8F; --t-paskirties_keitimas:#56707C; --t-pradzia:#2F7D6D;
+  --t-uzbaigimas:#6B7478; --t-kita:#9AA3A6; --t-pritarimas:#9AA3A6; --t-griovimas:#9AA3A6;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.5}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+header{padding:28px 28px 8px;max-width:1440px;margin:0 auto}
+.kicker{color:var(--muted);font-size:14px;margin:0 0 4px}
+h1{font-stretch:68%;font-weight:700;font-size:clamp(34px,5vw,56px);line-height:1;letter-spacing:-.01em;margin:0}
+h1 .period{display:block;font-weight:500;color:var(--muted);font-size:.42em;letter-spacing:0;margin-top:10px;font-stretch:85%}
+.types{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 4px;padding:0;list-style:none}
+.types button{font:inherit;font-size:14px;display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);border-radius:999px;cursor:pointer}
+.types button[aria-pressed="false"]{opacity:.45}
+.types .sw{width:10px;height:10px;border-radius:50%}
+.types .n{font-variant-numeric:tabular-nums;color:var(--muted)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 28px;max-width:1440px;margin:0 auto}
+.bar input[type=search],.bar select{font:inherit;font-size:14px;padding:7px 10px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet);color:var(--ink)}
+.bar input[type=search]{min-width:220px;flex:1 1 220px;max-width:360px}
+.bar label{font-size:14px;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.bar .spacer{flex:1}
+.bar button.dl{font:inherit;font-size:14px;padding:7px 14px;border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:6px;cursor:pointer}
+main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:0;max-width:1440px;margin:0 auto;padding:0 28px 40px}
+#list{border-top:2px solid var(--ink);background:var(--sheet)}
+.count{font-size:13px;color:var(--muted);padding:8px 14px;border-bottom:1px solid var(--rule)}
+.row{display:grid;grid-template-columns:86px 1fr auto;gap:14px;padding:12px 14px;border-bottom:1px solid var(--rule);cursor:pointer;border-left:3px solid transparent}
+.row:hover{background:#F0F3F3}
+.row.active{border-left-color:var(--ink);background:#EEF2F3}
+.row .d{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+.row .what{font-weight:600;line-height:1.3}
+.row .where{font-size:14px;color:var(--muted)}
+.row .meta{font-size:13px;margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted)}
+.row .tag{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.row .tag i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.row .builder{color:var(--ink)}
+.ticks{display:flex;gap:2px;align-items:flex-end;height:18px;padding-top:2px}
+.ticks span{width:3px;background:var(--rule);height:100%}
+.ticks span.on{background:var(--ink)}
+#mapwrap{position:sticky;top:12px;align-self:start;margin-left:20px;border-top:2px solid var(--ink)}
+#map{height:calc(100vh - 40px);min-height:420px;background:#E3E8E8}
+.empty{padding:40px 14px;color:var(--muted)}
+.leaflet-popup-content{font-family:inherit;font-size:13px;line-height:1.4}
+footer{max-width:1440px;margin:0 auto;padding:0 28px 32px;color:var(--muted);font-size:13px}
+@media (max-width:900px){
+  main{grid-template-columns:1fr}
+  #mapwrap{position:static;margin:0 0 16px;order:-1}
+  #map{height:320px;min-height:0}
+  .row{grid-template-columns:70px 1fr}
+  .ticks{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header>
+  <p class="kicker" id="kicker"></p>
+  <h1 id="headline"></h1>
+  <ul class="types" id="types" aria-label="Signalų tipai"></ul>
+</header>
+<div class="bar">
+  <input type="search" id="q" placeholder="Adresas, paskirtis, statytojas" aria-label="Paieška">
+  <select id="muni" aria-label="Savivaldybė"><option value="">Visos savivaldybės</option></select>
+  <select id="minscore" aria-label="Mažiausia svarba">
+    <option value="0">Bet kokia svarba</option><option value="4">Svarba nuo 4</option><option value="6">Svarba nuo 6</option>
+  </select>
+  <label><input type="checkbox" id="onlyBuilder"> Tik su statytoju</label>
+  <span class="spacer"></span>
+  <button class="dl" id="dl">Atsisiųsti CSV</button>
+</div>
+<main>
+  <section id="list" aria-live="polite"></section>
+  <div id="mapwrap"><div id="map" role="region" aria-label="Signalų žemėlapis"></div></div>
+</main>
+<footer>Šaltinis: VTPSI „Infostatyba“ atviri duomenys (data.gov.lt). Statytojų ir įmonių duomenys: JAR, Sodra.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const META = __META__;
+const DATA = __DATA__;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const color = t => getComputedStyle(document.documentElement).getPropertyValue("--t-" + t).trim() || "#9AA3A6";
+const plural = (n, a, b, c) => { const m10 = n % 10, m100 = n % 100; return (m10 === 1 && m100 !== 11) ? a : (m10 >= 2 && m10 <= 9 && (m100 < 11 || m100 > 19)) ? b : c; };
+
+const typeOrder = Object.keys(META.labels);
+const counts = {};
+DATA.forEach(d => counts[d.signal_type] = (counts[d.signal_type] || 0) + 1);
+const activeTypes = new Set(Object.keys(counts));
+
+$("#kicker").textContent = META.title;
+$("#headline").innerHTML = `${DATA.length} ${plural(DATA.length, "signalas", "signalai", "signalų")}<span class="period">${esc(META.from)} – ${esc(META.to)}</span>`;
+
+const typesEl = $("#types");
+typeOrder.filter(t => counts[t]).forEach(t => {
+  const li = document.createElement("li");
+  li.innerHTML = `<button type="button" aria-pressed="true" data-t="${t}"><span class="sw" style="background:${color(t)}"></span>${esc(META.labels[t])} <span class="n">${counts[t]}</span></button>`;
+  li.querySelector("button").addEventListener("click", e => {
+    const b = e.currentTarget, on = b.getAttribute("aria-pressed") === "true";
+    b.setAttribute("aria-pressed", on ? "false" : "true");
+    on ? activeTypes.delete(t) : activeTypes.add(t);
+    render();
+  });
+  typesEl.appendChild(li);
+});
+
+[...new Set(DATA.map(d => d.municipality).filter(Boolean))].sort((a, b) => a.localeCompare(b, "lt"))
+  .forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; $("#muni").appendChild(o); });
+
+let map = null, layer = null, markers = {};
+if (window.L) {
+  map = L.map("map", { scrollWheelZoom: true }).setView([55.2, 23.9], 7);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(map);
+  layer = L.layerGroup().addTo(map);
+} else {
+  $("#map").innerHTML = '<p class="empty">Žemėlapiui reikia interneto ryšio.</p>';
+}
+
+function filtered() {
+  const q = $("#q").value.trim().toLowerCase(), muni = $("#muni").value, min = +$("#minscore").value, ob = $("#onlyBuilder").checked;
+  return DATA.filter(d => activeTypes.has(d.signal_type)
+    && (!muni || d.municipality === muni) && (d.score || 0) >= min
+    && (!ob || d.builder_name || d.builder_code)
+    && (!q || [d.address, d.purposes, d.object_names, d.builder_name, d.project_name, d.signal_id].join(" ").toLowerCase().includes(q)));
+}
+
+function ticks(s) {
+  const n = Math.max(0, Math.min(8, s || 0));
+  return `<div class="ticks" title="Svarba ${n}" aria-label="Svarba ${n} iš 8">` + Array.from({length: 8}, (_, i) => `<span class="${i < n ? "on" : ""}" style="height:${40 + i * 8}%"></span>`).join("") + `</div>`;
+}
+
+function select(id, fromMap) {
+  document.querySelectorAll(".row.active").forEach(r => r.classList.remove("active"));
+  const row = document.getElementById("r-" + CSS.escape(id));
+  if (row) { row.classList.add("active"); if (fromMap) row.scrollIntoView({ block: "center", behavior: "smooth" }); }
+  const m = markers[id];
+  if (m && map && !fromMap) { map.setView(m.getLatLng(), Math.max(map.getZoom(), 13)); m.openPopup(); }
+}
+
+function render() {
+  const rows = filtered();
+  const list = $("#list");
+  if (!rows.length) {
+    list.innerHTML = `<div class="count">0 iš ${DATA.length}</div><p class="empty">Pagal šiuos filtrus signalų nėra. Įjunkite daugiau tipų arba išvalykite paiešką.</p>`;
+  } else {
+    list.innerHTML = `<div class="count">Rodoma ${rows.length} iš ${DATA.length}</div>` + rows.map(d => `
+      <article class="row" id="r-${esc(d.signal_id)}" data-id="${esc(d.signal_id)}" tabindex="0">
+        <div class="d">${esc(d.doc_date)}</div>
+        <div>
+          <div class="what">${esc(d.purposes || d.object_names || "Statinys")}</div>
+          <div class="where">${esc(d.address || "Adresas nenurodytas")}</div>
+          <div class="meta">
+            <span class="tag"><i style="background:${color(d.signal_type)}"></i>${esc(d.signal_label)}</span>
+            ${d.category ? `<span>${esc(d.category)}</span>` : ""}
+            ${d.object_count > 1 ? `<span>${d.object_count} statiniai</span>` : ""}
+            <span class="builder">${d.builder_name ? esc(d.builder_name) + (d.c_employees ? `, ${d.c_employees} darb.` : "") : "Statytojas nenustatytas"}</span>
+            <span>${esc(d.signal_id)}</span>
+          </div>
+        </div>
+        ${ticks(d.score)}
+      </article>`).join("");
+    list.querySelectorAll(".row").forEach(r => {
+      r.addEventListener("click", () => select(r.dataset.id));
+      r.addEventListener("keydown", e => { if (e.key === "Enter") select(r.dataset.id); });
+    });
+  }
+  if (map) {
+    layer.clearLayers(); markers = {};
+    const pts = [];
+    rows.forEach(d => {
+      if (d.lat == null || d.lon == null) return;
+      const m = L.circleMarker([d.lat, d.lon], { radius: 5 + Math.min(d.score || 0, 8) * .6, color: "#fff", weight: 1.5, fillColor: color(d.signal_type), fillOpacity: .9 })
+        .bindPopup(`<strong>${esc(d.purposes || d.object_names)}</strong><br>${esc(d.address)}<br>${esc(d.signal_label)} · ${esc(d.doc_date)}`);
+      m.on("click", () => select(d.signal_id, true));
+      m.addTo(layer); markers[d.signal_id] = m; pts.push([d.lat, d.lon]);
+    });
+    if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 12 });
+  }
+}
+
+function downloadCsv() {
+  const cols = [["signal_id","Dokumento nr."],["doc_date","Data"],["signal_label","Signalas"],["purposes","Paskirtis"],["category","Kategorija"],["object_names","Statiniai"],["address","Adresas"],["municipality","Savivaldybė"],["cadastre","Kadastro nr."],["lat","Platuma"],["lon","Ilguma"],["score","Svarba"],["builder_name","Statytojas"],["builder_code","Statytojo kodas"]];
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines = [cols.map(c => q(c[1])).join(";")].concat(filtered().map(d => cols.map(c => q(d[c[0]])).join(";")));
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `signalai_${META.from}_${META.to}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+["#q", "#muni", "#minscore", "#onlyBuilder"].forEach(s => $(s).addEventListener("input", render));
+$("#dl").addEventListener("click", downloadCsv);
+render();
+</script>
+</body>
+</html>
