@@ -205,6 +205,9 @@ def cmd_fetch(args):
 
 
 def cmd_import(args):
+    if args.salis and len(args.salis) > 1:
+        _err("importuojant nurodykite vieną šalį, pvz. --salis LV")
+        return 1
     code = args.salis[0] if args.salis else "LT"
     with _connect(args) as con:
         since = args.since or resolve_since(con, source=code)
@@ -217,6 +220,8 @@ def cmd_import(args):
         new = db.insert_rows(con, code, items)
         db.log_run(con, since, len(items), new, 0, f"import {code} {', '.join(os.path.basename(f) for f in args.failai)}")
     print(f"Nuskaityta įrašų: {len(items)}, naujų: {new}. Toliau: python sistema.py build")
+    if code == "EE":
+        print("Jei įkėlėte koordinačių ataskaitą (ehitise_ruumikuju), paleiskite: python sistema.py build --all")
     return 0
 
 

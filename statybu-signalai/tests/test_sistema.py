@@ -185,6 +185,7 @@ class ImportTest(CliTestCase):
         self.assertEqual(self.run_cli("import-csv", path)[0], 1)
         self.assertEqual(self.run_cli("import", "--salis", "PL", path)[0], 1)
         self.assertEqual(self.run_cli("import", "--salis", "LV", self.tmp.file("nera.csv"))[0], 1)
+        self.assertEqual(self.run_cli("import", "--salis", "LV,PL", path)[0], 1)
 
     def test_enrich_needs_builders_first(self):
         code, out = self.run_cli("enrich", self.tmp.file("nera.csv"))
