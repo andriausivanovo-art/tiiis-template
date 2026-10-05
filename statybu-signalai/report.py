@@ -8,7 +8,7 @@ import os
 import config
 
 EXPORT_COLS = [
-    ("signal_id", "Dokumento nr."), ("doc_date", "Data"), ("signal_label", "Signalas"),
+    ("country", "Šalis"), ("signal_id", "Dokumento nr."), ("doc_date", "Data"), ("signal_label", "Signalas"),
     ("works_type", "Statybos rūšis"), ("purposes", "Paskirtis"), ("category", "Kategorija"),
     ("object_names", "Statiniai"), ("object_count", "Statinių sk."), ("address", "Adresas"),
     ("municipality", "Savivaldybė"), ("cadastre", "Kadastro nr."), ("lat", "Platuma"), ("lon", "Ilguma"),
@@ -18,7 +18,7 @@ EXPORT_COLS = [
 ]
 
 
-def fetch_rows(con, since=None, until=None, types=None, by="doc_date"):
+def fetch_rows(con, since=None, until=None, types=None, by="doc_date", countries=None):
     q = """SELECT s.*, c.employees AS c_employees, c.nace AS c_nace, c.status AS c_status,
                   COALESCE(s.builder_name, c.name) AS builder_name
            FROM signals s LEFT JOIN companies c ON c.code = s.builder_code WHERE 1=1"""
@@ -32,8 +32,41 @@ def fetch_rows(con, since=None, until=None, types=None, by="doc_date"):
     if types:
         q += " AND s.signal_type IN (%s)" % ",".join("?" * len(types))
         args += list(types)
+    if countries:
+        q += " AND s.country IN (%s)" % ",".join("?" * len(countries))
+        args += list(countries)
     q += " ORDER BY s.score DESC, s.doc_date DESC"
-    return [dict(r) for r in con.execute(q, args).fetchall()]
+    cur = con.execute(q, args)
+    # builder_name užklausoje yra du kartus (s.* ir COALESCE). dict(sqlite3.Row) paimtų pirmąjį,
+    # todėl žodyną statome patys: vėlesnis stulpelis (COALESCE su JAR pavadinimu) laimi.
+    names = [d[0] for d in cur.description]
+    return [dict(zip(names, r)) for r in cur.fetchall()]
+
+
+def plural(n, one, few, many):
+    """Lietuviška daugiskaita: 1 objektas, 2 objektai, 10 objektų, 21 objektas."""
+    m10, m100 = n % 10, n % 100
+    if m10 == 1 and m100 != 11:
+        return one
+    if 2 <= m10 <= 9 and not 11 <= m100 <= 19:
+        return few
+    return many
+
+
+def type_labels():
+    """Tipų pavadinimai rodymo tvarka: parduodami tipai statybos eiga, po jų likę, pabaigoje „Kita“."""
+    names = dict(config.TYPE_LABELS)
+    names.update({code: names.get(code, label) for code, label, _ in config.SIGNAL_RULES})
+    order = list(config.SELLABLE_TYPES) + [t for t in names if t not in config.SELLABLE_TYPES and t != "kita"]
+    labels = {t: names[t] for t in order}
+    labels["kita"] = names.get("kita", "Kita")
+    return labels
+
+
+SOURCE_NAMES = {
+    "LT": "Infostatyba (VTPSI atviri duomenys)", "LV": "BIS (Latvijos atviri duomenys)",
+    "PL": "GUNB RWDZ (Lenkijos atviri duomenys)", "EE": "Ehitisregister (Estijos atviri duomenys)",
+}
 
 
 def write_csv(rows, path):
@@ -51,20 +84,22 @@ def write_builder_queue(rows, path):
     todo = [r for r in rows if not r.get("builder_code") and not r.get("builder_name")
             and r["signal_type"] in ("prasymas", "leidimas_nauja", "leidimas_rekonstrukcija", "paskirties_keitimas")]
     todo.sort(key=lambda r: -r["score"])
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8-sig", newline="") as fh:
         w = csv.writer(fh, delimiter=";")
         w.writerow(["dokumento_reg_nr", "statytojo_kodas", "statytojo_pavadinimas", "pastaba",
-                    "svarba", "data", "signalas", "paskirtis", "adresas", "paieska"])
+                    "svarba", "data", "signalas", "paskirtis", "adresas", "paieska", "salis"])
         for r in todo:
-            w.writerow([r["signal_id"], "", "", "", r["score"], r["doc_date"], r["signal_label"],
-                        r["purposes"], r["address"], config.INFOSTATYBA_SEARCH_URL])
+            w.writerow([r["signal_id"], "", "", "", r["score"], r["doc_date"], r["signal_label"], r["purposes"],
+                        r["address"], config.INFOSTATYBA_SEARCH_URL if r.get("country", "LT") == "LT" else "",
+                        r.get("country", "LT")])
     return len(todo)
 
 
 def _json_rows(rows):
-    keep = ["signal_id", "doc_date", "signal_type", "signal_label", "works_type", "purposes", "category",
+    keep = ["country", "signal_id", "doc_date", "signal_type", "signal_label", "works_type", "purposes", "category",
             "object_names", "object_count", "address", "municipality", "cadastre", "lat", "lon", "score",
-            "builder_code", "builder_name", "c_employees", "project_name"]
+            "builder_code", "builder_name", "c_employees", "project_name", "project_nr"]
     return [{k: r.get(k) for k in keep} for r in rows]
 
 
@@ -72,19 +107,26 @@ def write_html(rows, path, period_from, period_to, title="Statybų signalai"):
     tpl_path = os.path.join(os.path.dirname(__file__), "templates", "ataskaita.html")
     with open(tpl_path, encoding="utf-8") as fh:
         tpl = fh.read()
-    labels = {code: label for code, label, _ in config.SIGNAL_RULES}
-    labels["kita"] = "Kita"
-    meta = {"from": period_from, "to": period_to, "title": title, "labels": labels}
+    meta = {"from": period_from, "to": period_to, "title": title, "labels": type_labels(),
+            "countries": config.COUNTRY_NAMES}
+    meta = json.dumps(meta, ensure_ascii=False).replace("</", "<\\/")
     data = json.dumps(_json_rows(rows), ensure_ascii=False).replace("</", "<\\/")
-    out = tpl.replace("__META__", json.dumps(meta, ensure_ascii=False)).replace("__DATA__", data)
-    out = out.replace("__TITLE__", html.escape(title))
+    out = tpl.replace("__TITLE__", html.escape(title)).replace("__META__", meta).replace("__DATA__", data)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(out)
     return path
 
 
+def _country_suffix(r):
+    c = r.get("country") or "LT"
+    return "" if c == "LT" else f" ({config.COUNTRY_NAMES.get(c, c)})"
+
+
 def write_client_sample(rows, path, heading, period_from, period_to, limit=10, contact=""):
     """Statinis HTML (tinka el. laiškui): geriausi N signalų konkrečiai įmonei ar segmentui."""
+    sources = sorted({r.get("country") or "LT" for r in rows[:limit]}) or ["LT"]
+    source_text = ", ".join(SOURCE_NAMES.get(c, c) for c in sources)
     rows = rows[:limit]
     e = html.escape
     tr = []
@@ -94,7 +136,7 @@ def write_client_sample(rows, path, heading, period_from, period_to, limit=10, c
 <td style="padding:10px 12px;border-bottom:1px solid #D5DBDC;white-space:nowrap;color:#5E6B70;font-size:13px">{e(r['doc_date'])}</td>
 <td style="padding:10px 12px;border-bottom:1px solid #D5DBDC;font-size:14px;color:#1E2A2F">
 <div style="font-weight:600">{e(r['purposes'] or r['object_names'] or '-')}</div>
-<div style="color:#5E6B70;font-size:13px">{e(r['address'] or '')}</div></td>
+<div style="color:#5E6B70;font-size:13px">{e(r['address'] or '')}{e(_country_suffix(r))}</div></td>
 <td style="padding:10px 12px;border-bottom:1px solid #D5DBDC;font-size:13px;color:#1E2A2F">{e(r['signal_label'])}<br>
 <span style="color:#5E6B70">{e(r.get('category') or '')}</span></td>
 <td style="padding:10px 12px;border-bottom:1px solid #D5DBDC;font-size:13px;color:#1E2A2F">{e(builder)}</td>
@@ -104,7 +146,7 @@ def write_client_sample(rows, path, heading, period_from, period_to, limit=10, c
 <body style="margin:0;padding:24px;background:#F6F7F5;font-family:Arial,Helvetica,sans-serif">
 <table role="presentation" width="100%" style="max-width:760px;margin:0 auto;background:#FFFFFF;border:1px solid #D5DBDC;border-collapse:collapse">
 <tr><td style="padding:20px 20px 4px;font-size:20px;font-weight:700;color:#1E2A2F">{e(heading)}</td></tr>
-<tr><td style="padding:0 20px 16px;font-size:14px;color:#5E6B70">{e(period_from)} – {e(period_to)} · {len(rows)} objektai · šaltinis: Infostatyba (VTPSI atviri duomenys)</td></tr>
+<tr><td style="padding:0 20px 16px;font-size:14px;color:#5E6B70">{e(period_from)} – {e(period_to)} · {len(rows)} {plural(len(rows), "objektas", "objektai", "objektų")} · šaltinis: {e(source_text)}</td></tr>
 <tr><td style="padding:0 8px 8px"><table width="100%" style="border-collapse:collapse">
 <tr><th align="left" style="padding:8px 12px;font-size:12px;color:#5E6B70;border-bottom:2px solid #1E2A2F">Data</th>
 <th align="left" style="padding:8px 12px;font-size:12px;color:#5E6B70;border-bottom:2px solid #1E2A2F">Objektas</th>
@@ -113,6 +155,7 @@ def write_client_sample(rows, path, heading, period_from, period_to, limit=10, c
 {body}</table></td></tr>
 <tr><td style="padding:16px 20px 20px;font-size:13px;color:#5E6B70">{e(contact)}</td></tr>
 </table></body></html>"""
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(doc)
     return path

@@ -14,6 +14,7 @@
   --t-prasymas:#7A4FA0; --t-leidimas_nauja:#D9480F; --t-leidimas_rekonstrukcija:#A86A12;
   --t-leidimas_atnaujinimas:#3B6E8F; --t-paskirties_keitimas:#56707C; --t-pradzia:#2F7D6D;
   --t-uzbaigimas:#6B7478; --t-kita:#9AA3A6; --t-pritarimas:#9AA3A6; --t-griovimas:#9AA3A6;
+  --t-pranesimas:#B5527A;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--paper);color:var(--ink);font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.5}
@@ -47,6 +48,7 @@ main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:0;max
 .row .tag{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
 .row .tag i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .row .builder{color:var(--ink)}
+.row .cc{font-size:11px;font-weight:600;letter-spacing:.04em;border:1px solid var(--rule);border-radius:4px;padding:0 5px;color:var(--ink)}
 .ticks{display:flex;gap:2px;align-items:flex-end;height:18px;padding-top:2px}
 .ticks span{width:3px;background:var(--rule);height:100%}
 .ticks span.on{background:var(--ink)}
@@ -73,6 +75,7 @@ footer{max-width:1440px;margin:0 auto;padding:0 28px 32px;color:var(--muted);fon
 </header>
 <div class="bar">
   <input type="search" id="q" placeholder="Adresas, paskirtis, statytojas" aria-label="Paieška">
+  <select id="country" aria-label="Šalis" hidden><option value="">Visos šalys</option></select>
   <select id="muni" aria-label="Savivaldybė"><option value="">Visos savivaldybės</option></select>
   <select id="minscore" aria-label="Mažiausia svarba">
     <option value="0">Bet kokia svarba</option><option value="4">Svarba nuo 4</option><option value="6">Svarba nuo 6</option>
@@ -85,7 +88,7 @@ footer{max-width:1440px;margin:0 auto;padding:0 28px 32px;color:var(--muted);fon
   <section id="list" aria-live="polite"></section>
   <div id="mapwrap"><div id="map" role="region" aria-label="Signalų žemėlapis"></div></div>
 </main>
-<footer>Šaltinis: VTPSI „Infostatyba“ atviri duomenys (data.gov.lt). Statytojų ir įmonių duomenys: JAR, Sodra.</footer>
+<footer>Šaltiniai: VTPSI „Infostatyba“ (data.gov.lt), Latvijos BIS (data.gov.lv), Lenkijos GUNB RWDZ, Estijos Ehitisregister – atviri duomenys. Statytojų ir įmonių duomenys: JAR, Sodra.</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -94,6 +97,7 @@ const DATA = __DATA__;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const color = t => getComputedStyle(document.documentElement).getPropertyValue("--t-" + t).trim() || "#9AA3A6";
+const MAX_SCORE = 9;  // config.SCORE: tipas 3 + paskirtis 3 + kategorija 2 + daug statinių 1
 const plural = (n, a, b, c) => { const m10 = n % 10, m100 = n % 100; return (m10 === 1 && m100 !== 11) ? a : (m10 >= 2 && m10 <= 9 && (m100 < 11 || m100 > 19)) ? b : c; };
 
 const typeOrder = Object.keys(META.labels);
@@ -117,29 +121,44 @@ typeOrder.filter(t => counts[t]).forEach(t => {
   typesEl.appendChild(li);
 });
 
-[...new Set(DATA.map(d => d.municipality).filter(Boolean))].sort((a, b) => a.localeCompare(b, "lt"))
-  .forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; $("#muni").appendChild(o); });
+const COUNTRIES = META.countries || {};
+const countryCodes = [...new Set(DATA.map(d => d.country || "LT"))].sort();
+if (countryCodes.length > 1) {
+  $("#country").hidden = false;
+  countryCodes.forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = COUNTRIES[c] || c; $("#country").appendChild(o); });
+}
+function fillMunis() {
+  const c = $("#country").value, sel = $("#muni"), keep = sel.value;
+  sel.length = 1;
+  [...new Set(DATA.filter(d => !c || (d.country || "LT") === c).map(d => d.municipality).filter(Boolean))].sort((a, b) => a.localeCompare(b, "lt"))
+    .forEach(m => { const o = document.createElement("option"); o.value = m; o.textContent = m; sel.appendChild(o); });
+  sel.value = [...sel.options].some(o => o.value === keep) ? keep : "";
+}
+fillMunis();
+$("#country").addEventListener("input", fillMunis);
 
 let map = null, layer = null, markers = {};
 if (window.L) {
   map = L.map("map", { scrollWheelZoom: true }).setView([55.2, 23.9], 7);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "&copy; OpenStreetMap" }).addTo(map);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> autoriai' }).addTo(map);
   layer = L.layerGroup().addTo(map);
 } else {
   $("#map").innerHTML = '<p class="empty">Žemėlapiui reikia interneto ryšio.</p>';
 }
 
 function filtered() {
-  const q = $("#q").value.trim().toLowerCase(), muni = $("#muni").value, min = +$("#minscore").value, ob = $("#onlyBuilder").checked;
+  const q = $("#q").value.trim().toLowerCase(), muni = $("#muni").value, min = +$("#minscore").value, ob = $("#onlyBuilder").checked, cc = $("#country").value;
   return DATA.filter(d => activeTypes.has(d.signal_type)
+    && (!cc || (d.country || "LT") === cc)
     && (!muni || d.municipality === muni) && (d.score || 0) >= min
     && (!ob || d.builder_name || d.builder_code)
     && (!q || [d.address, d.purposes, d.object_names, d.builder_name, d.project_name, d.signal_id].join(" ").toLowerCase().includes(q)));
 }
 
 function ticks(s) {
-  const n = Math.max(0, Math.min(8, s || 0));
-  return `<div class="ticks" title="Svarba ${n}" aria-label="Svarba ${n} iš 8">` + Array.from({length: 8}, (_, i) => `<span class="${i < n ? "on" : ""}" style="height:${40 + i * 8}%"></span>`).join("") + `</div>`;
+  const n = Math.max(0, Math.min(MAX_SCORE, s || 0));
+  return `<div class="ticks" title="Svarba ${s ?? 0}" aria-label="Svarba ${n} iš ${MAX_SCORE}">` + Array.from({length: MAX_SCORE}, (_, i) => `<span class="${i < n ? "on" : ""}" style="height:${40 + i * 60 / (MAX_SCORE - 1)}%"></span>`).join("") + `</div>`;
 }
 
 function select(id, fromMap) {
@@ -161,13 +180,14 @@ function render() {
         <div class="d">${esc(d.doc_date)}</div>
         <div>
           <div class="what">${esc(d.purposes || d.object_names || "Statinys")}</div>
-          <div class="where">${esc(d.address || "Adresas nenurodytas")}</div>
+          <div class="where">${esc(d.address || "Adresas nenurodytas")}${d.lat == null ? ' <span title="Šaltinyje koordinačių nėra">· be koordinačių</span>' : ""}</div>
           <div class="meta">
+            ${countryCodes.length > 1 ? `<span class="cc" title="${esc(COUNTRIES[d.country] || d.country)}">${esc(d.country || "LT")}</span>` : ""}
             <span class="tag"><i style="background:${color(d.signal_type)}"></i>${esc(d.signal_label)}</span>
             ${d.category ? `<span>${esc(d.category)}</span>` : ""}
-            ${d.object_count > 1 ? `<span>${d.object_count} statiniai</span>` : ""}
+            ${d.object_count > 1 ? `<span>${d.object_count} ${plural(d.object_count, "statinys", "statiniai", "statinių")}</span>` : ""}
             <span class="builder">${d.builder_name ? esc(d.builder_name) + (d.c_employees ? `, ${d.c_employees} darb.` : "") : "Statytojas nenustatytas"}</span>
-            <span>${esc(d.signal_id)}</span>
+            <span>${esc((d.country || "LT") === "LT" || !d.project_nr ? d.signal_id : (d.country === "EE" ? "EHR " : "") + d.project_nr)}</span>
           </div>
         </div>
         ${ticks(d.score)}
@@ -182,7 +202,7 @@ function render() {
     const pts = [];
     rows.forEach(d => {
       if (d.lat == null || d.lon == null) return;
-      const m = L.circleMarker([d.lat, d.lon], { radius: 5 + Math.min(d.score || 0, 8) * .6, color: "#fff", weight: 1.5, fillColor: color(d.signal_type), fillOpacity: .9 })
+      const m = L.circleMarker([d.lat, d.lon], { radius: 5 + Math.max(0, Math.min(d.score || 0, MAX_SCORE)) * .6, color: "#fff", weight: 1.5, fillColor: color(d.signal_type), fillOpacity: .9 })
         .bindPopup(`<strong>${esc(d.purposes || d.object_names)}</strong><br>${esc(d.address)}<br>${esc(d.signal_label)} · ${esc(d.doc_date)}`);
       m.on("click", () => select(d.signal_id, true));
       m.addTo(layer); markers[d.signal_id] = m; pts.push([d.lat, d.lon]);
@@ -192,7 +212,7 @@ function render() {
 }
 
 function downloadCsv() {
-  const cols = [["signal_id","Dokumento nr."],["doc_date","Data"],["signal_label","Signalas"],["purposes","Paskirtis"],["category","Kategorija"],["object_names","Statiniai"],["address","Adresas"],["municipality","Savivaldybė"],["cadastre","Kadastro nr."],["lat","Platuma"],["lon","Ilguma"],["score","Svarba"],["builder_name","Statytojas"],["builder_code","Statytojo kodas"]];
+  const cols = [["country","Šalis"],["signal_id","Dokumento nr."],["doc_date","Data"],["signal_label","Signalas"],["purposes","Paskirtis"],["category","Kategorija"],["object_names","Statiniai"],["address","Adresas"],["municipality","Savivaldybė"],["cadastre","Kadastro nr."],["lat","Platuma"],["lon","Ilguma"],["score","Svarba"],["builder_name","Statytojas"],["builder_code","Statytojo kodas"]];
   const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const lines = [cols.map(c => q(c[1])).join(";")].concat(filtered().map(d => cols.map(c => q(d[c[0]])).join(";")));
   const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -201,7 +221,7 @@ function downloadCsv() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-["#q", "#muni", "#minscore", "#onlyBuilder"].forEach(s => $(s).addEventListener("input", render));
+["#q", "#country", "#muni", "#minscore", "#onlyBuilder"].forEach(s => $(s).addEventListener("input", render));
 $("#dl").addEventListener("click", downloadCsv);
 render();
 </script>

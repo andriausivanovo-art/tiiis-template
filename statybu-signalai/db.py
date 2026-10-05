@@ -11,12 +11,13 @@ CREATE TABLE IF NOT EXISTS raw_records (
     doc_nr       TEXT,
     doc_date     TEXT,
     data_json    TEXT NOT NULL,
-    first_seen   TEXT NOT NULL
+    first_seen   TEXT NOT NULL,
+    source       TEXT NOT NULL DEFAULT 'LT'   -- šalis: LT, LV, PL, EE
 );
 CREATE INDEX IF NOT EXISTS ix_raw_doc ON raw_records(doc_nr);
 
 CREATE TABLE IF NOT EXISTS signals (
-    signal_id     TEXT PRIMARY KEY,      -- dokumento_reg_nr
+    signal_id     TEXT PRIMARY KEY,      -- LT: dokumento_reg_nr; kitos šalys: "LV:..." ir pan.
     doc_date      TEXT,
     signal_type   TEXT,
     signal_label  TEXT,
@@ -38,7 +39,8 @@ CREATE TABLE IF NOT EXISTS signals (
     builder_code  TEXT,
     builder_name  TEXT,
     first_seen    TEXT NOT NULL,
-    updated       TEXT NOT NULL
+    updated       TEXT NOT NULL,
+    country       TEXT NOT NULL DEFAULT 'LT'
 );
 CREATE INDEX IF NOT EXISTS ix_sig_date ON signals(doc_date);
 CREATE INDEX IF NOT EXISTS ix_sig_first ON signals(first_seen);
@@ -55,6 +57,15 @@ CREATE TABLE IF NOT EXISTS companies (
     avg_wage      REAL,
     data_month    TEXT,
     updated       TEXT
+);
+
+-- Koordinatės, gaunamos atskiru failu (pvz., Estijos statinių kontūrų ataskaita)
+CREATE TABLE IF NOT EXISTS taskai (
+    source        TEXT NOT NULL,
+    key           TEXT NOT NULL,
+    lat           REAL,
+    lon           REAL,
+    PRIMARY KEY (source, key)
 );
 
 CREATE TABLE IF NOT EXISTS runs (
@@ -78,44 +89,94 @@ def connect(path):
     con = sqlite3.connect(path)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    _migrate(con)
     return con
 
 
-def insert_raw(con, rows, fields):
-    """Įrašo naujus žalius įrašus. Grąžina, kiek buvo naujų."""
+def _migrate(con):
+    """Senose bazėse (tik LT) prideda šalies stulpelius ir indeksus."""
+    for table, col in (("raw_records", "source"), ("signals", "country")):
+        cols = {r["name"] for r in con.execute(f"PRAGMA table_info({table})")}
+        if col not in cols:
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {col} TEXT NOT NULL DEFAULT 'LT'")
+    con.execute("CREATE INDEX IF NOT EXISTS ix_raw_source ON raw_records(source, doc_date)")
+    con.execute("CREATE INDEX IF NOT EXISTS ix_sig_country ON signals(country)")
+    con.commit()
+
+
+def insert_rows(con, source, items):
+    """Įrašo naujus žalius įrašus: items – (raktas, dokumentas, data, įrašas). Grąžina naujų skaičių."""
     new = 0
     ts = now_iso()
-    for r in rows:
-        key = r.get(fields["row_id"]) or r.get("_id") or r.get("id")
-        if not key:
-            # be ID: sudarome iš dokumento ir statinio
-            key = f'{r.get(fields["doc_nr"])}|{r.get(fields["unique_nr"])}|{r.get(fields["object_name"])}'
+    for key, doc_nr, doc_date, row in items:
         cur = con.execute(
-            "INSERT OR IGNORE INTO raw_records(row_key, doc_nr, doc_date, data_json, first_seen) VALUES (?,?,?,?,?)",
-            (str(key), r.get(fields["doc_nr"]), (r.get(fields["doc_date"]) or "")[:10],
-             json.dumps(r, ensure_ascii=False), ts),
+            "INSERT OR IGNORE INTO raw_records(row_key, doc_nr, doc_date, data_json, first_seen, source) "
+            "VALUES (?,?,?,?,?,?)",
+            (str(key), doc_nr, (doc_date or "")[:10], json.dumps(row, ensure_ascii=False), ts, source),
         )
         new += cur.rowcount
     con.commit()
     return new
 
 
-def raw_by_doc(con, doc_nrs=None):
-    """Grąžina {doc_nr: [įrašai]} – visiems arba nurodytiems dokumentams."""
+def lt_items(rows, fields):
+    """Infostatybos įrašai -> (raktas, dokumentas, data, įrašas)."""
+    for r in rows:
+        key = r.get(fields["row_id"]) or r.get("_id") or r.get("id")
+        if not key:
+            # be ID: sudarome iš dokumento ir statinio
+            key = f'{r.get(fields["doc_nr"])}|{r.get(fields["unique_nr"])}|{r.get(fields["object_name"])}'
+        yield key, r.get(fields["doc_nr"]), r.get(fields["doc_date"]), r
+
+
+def insert_raw(con, rows, fields):
+    """Įrašo naujus Lietuvos (Infostatybos) žalius įrašus. Grąžina, kiek buvo naujų."""
+    return insert_rows(con, "LT", lt_items(rows, fields))
+
+
+def raw_groups(con, doc_nrs=None):
+    """Grąžina {doc_nr: (šaltinis, [įrašai])} – visiems arba nurodytiems dokumentams."""
     out = {}
+    q = "SELECT doc_nr, source, data_json FROM raw_records WHERE doc_nr IS NOT NULL"
     if doc_nrs is None:
-        cur = con.execute("SELECT doc_nr, data_json FROM raw_records WHERE doc_nr IS NOT NULL")
+        cur = con.execute(q)
     else:
         doc_nrs = list(doc_nrs)
-        out = {d: [] for d in doc_nrs}
         cur = []
         for i in range(0, len(doc_nrs), 500):
             chunk = doc_nrs[i:i + 500]
-            q = "SELECT doc_nr, data_json FROM raw_records WHERE doc_nr IN (%s)" % ",".join("?" * len(chunk))
-            cur.extend(con.execute(q, chunk).fetchall())
+            cur.extend(con.execute(q + " AND doc_nr IN (%s)" % ",".join("?" * len(chunk)), chunk).fetchall())
     for row in cur:
-        out.setdefault(row["doc_nr"], []).append(json.loads(row["data_json"]))
+        out.setdefault(row["doc_nr"], (row["source"], []))[1].append(json.loads(row["data_json"]))
     return out
+
+
+def raw_by_doc(con, doc_nrs=None):
+    """Grąžina {doc_nr: [įrašai]} – visiems arba nurodytiems dokumentams."""
+    out = {d: [] for d in doc_nrs} if doc_nrs is not None else {}
+    for doc, (_, rows) in raw_groups(con, doc_nrs).items():
+        out[doc] = rows
+    return out
+
+
+def known_docs(con, source):
+    """Šaltinio dokumentų numeriai, kuriuos jau turime (stadijų pokyčiams atpažinti)."""
+    return {r[0] for r in con.execute("SELECT DISTINCT doc_nr FROM raw_records WHERE source=?", (source,))}
+
+
+def set_points(con, source, points):
+    """Įrašo koordinates: points – (raktas, platuma, ilguma). Grąžina įrašytų skaičių."""
+    n = 0
+    for key, lat, lon in points:
+        con.execute("INSERT OR REPLACE INTO taskai(source, key, lat, lon) VALUES (?,?,?,?)", (source, key, lat, lon))
+        n += 1
+    con.commit()
+    return n
+
+
+def get_point(con, source, key):
+    row = con.execute("SELECT lat, lon FROM taskai WHERE source=? AND key=?", (source, key)).fetchone()
+    return (row["lat"], row["lon"]) if row else (None, None)
 
 
 def upsert_signal(con, s):
@@ -126,24 +187,55 @@ def upsert_signal(con, s):
     cols = ["signal_id", "doc_date", "signal_type", "signal_label", "doc_text", "works_type", "purposes",
             "category", "object_names", "object_count", "address", "municipality", "cadastre",
             "project_name", "project_nr", "lat", "lon", "point_lks", "score"]
+    country = s.get("country") or "LT"
+    # statytoją kartais pateikia pats šaltinis (pvz., Lenkijos investuotojas); builders.csv įrašas svarbesnis
+    b_code, b_name = s.get("builder_code") or None, s.get("builder_name") or None
     if existing is None:
         con.execute(
-            "INSERT INTO signals(%s, first_seen, updated) VALUES (%s, ?, ?)" % (",".join(cols), ",".join("?" * len(cols))),
-            [s.get(c) for c in cols] + [ts, ts],
+            "INSERT INTO signals(%s, country, builder_code, builder_name, first_seen, updated) "
+            "VALUES (%s, ?, ?, ?, ?, ?)" % (",".join(cols), ",".join("?" * len(cols))),
+            [s.get(c) for c in cols] + [country, b_code, b_name, ts, ts],
         )
         return True
     sets = ",".join(f"{c}=?" for c in cols[1:])
-    con.execute(f"UPDATE signals SET {sets}, updated=? WHERE signal_id=?",
-                [s.get(c) for c in cols[1:]] + [ts, s["signal_id"]])
+    con.execute(f"UPDATE signals SET {sets}, country=?, builder_code=COALESCE(builder_code, ?), "
+                f"builder_name=COALESCE(builder_name, ?), updated=? WHERE signal_id=?",
+                [s.get(c) for c in cols[1:]] + [country, b_code, b_name, ts, s["signal_id"]])
     return False
 
 
+def docs_to_build(con):
+    """Dokumentai, kurių signalo dar nėra arba kuriems po paskutinio perskaičiavimo atsirado naujų įrašų.
+
+    Negaliojantys dokumentai signalo neturi, todėl tikrinami kaskart iš naujo (jų nedaug).
+    """
+    cur = con.execute("""SELECT DISTINCT r.doc_nr FROM raw_records r
+                         LEFT JOIN signals s ON s.signal_id = r.doc_nr
+                         WHERE r.doc_nr IS NOT NULL AND r.doc_nr != ''
+                           AND (s.signal_id IS NULL OR r.first_seen >= s.updated)""")
+    return [row["doc_nr"] for row in cur]
+
+
+def delete_signal(con, signal_id):
+    """Pašalina signalą (pvz., dokumentas panaikintas). Grąžina True, jei toks buvo."""
+    return con.execute("DELETE FROM signals WHERE signal_id=?", (signal_id,)).rowcount > 0
+
+
 def log_run(con, since_date, fetched, new_raw, new_signals, note=""):
+    # started įrašomas, kai paleidimas baigtas: nuo šio laiko kitas `run` skaičiuoja naujus signalus
     con.execute("INSERT INTO runs(started, since_date, fetched, new_raw, new_signals, note) VALUES (?,?,?,?,?,?)",
                 (now_iso(), since_date, fetched, new_raw, new_signals, note))
     con.commit()
 
 
-def last_since(con):
-    row = con.execute("SELECT MAX(doc_date) AS d FROM raw_records").fetchone()
+def last_run(con, kind="run"):
+    """Paskutinio sėkmingo nurodyto tipo paleidimo laikas arba None."""
+    row = con.execute("SELECT MAX(started) AS t FROM runs WHERE note LIKE ? AND note NOT LIKE '%KLAIDA%'",
+                      (kind + "%",)).fetchone()
+    return row["t"] if row and row["t"] else None
+
+
+def last_since(con, source="LT"):
+    """Naujausia turima šaltinio dokumento data."""
+    row = con.execute("SELECT MAX(doc_date) AS d FROM raw_records WHERE source=?", (source,)).fetchone()
     return row["d"] if row and row["d"] else None

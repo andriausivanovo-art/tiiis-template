@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Duomenų gavimas iš data.gov.lt (Spinta API) ir atsarginis CSV importas."""
 import csv
-import io
 import json
 import sys
 import time
@@ -32,6 +31,17 @@ def _get(url):
         raise FetchError(f"Nepavyko prisijungti: {e.reason}") from e
 
 
+def _blocked(body):
+    return "blocked" in (body or "")[:300000].lower()
+
+
+def _http_error(status, body, what="API grąžino"):
+    if _blocked(body):
+        return FetchError("API užklausą užblokavo data.gov.lt ugniasienė. Leiskite iš Lietuvos IP adreso "
+                          "arba įkelkite CSV: python sistema.py import-csv <failas>.")
+    return FetchError(f"{what} HTTP {status}: {' '.join(body.split())[:300]}")
+
+
 def _url(query_parts):
     q = "&".join(p for p in query_parts if p)
     return f"{config.API_BASE}/{config.MODEL}" + ("?" + urllib.parse.quote(q, safe=_SAFE) if q else "")
@@ -40,10 +50,9 @@ def _url(query_parts):
 def _parse(body):
     """Grąžina (įrašai, kito puslapio žymė)."""
     if body.lstrip().startswith("<"):
-        txt = " ".join(body.split())[:300]
-        if "blocked" in txt.lower():
-            raise FetchError("API užklausą užblokavo data.gov.lt ugniasienė. Leiskite iš Lietuvos IP adreso.")
-        raise FetchError("Vietoj JSON gautas HTML: " + txt)
+        if _blocked(body):
+            raise _http_error(200, body)
+        raise FetchError("Vietoj JSON gautas HTML: " + " ".join(body.split())[:300])
     d = json.loads(body)
     rows = d.get("_data", d if isinstance(d, list) else [])
     page = d.get("_page") or {}
@@ -62,6 +71,8 @@ def fetch_since(since_date, max_pages=500, verbose=True):
     rows_all, mode = [], "server"
 
     status, body = _get(_url([server_filter, f"limit({config.PAGE_LIMIT})"]))
+    if status >= 400 and _blocked(body):
+        raise _http_error(status, body)
     if status >= 400:
         if verbose:
             print(f"  Serveris nepriėmė datos filtro (HTTP {status}), imu visą rinkinį ir filtruoju vietoje.",
@@ -69,7 +80,7 @@ def fetch_since(since_date, max_pages=500, verbose=True):
         mode = "client"
         status, body = _get(_url([f"limit({config.PAGE_LIMIT})"]))
         if status >= 400:
-            raise FetchError(f"API grąžino HTTP {status}: {' '.join(body.split())[:300]}")
+            raise _http_error(status, body)
 
     pages = 0
     while True:
@@ -87,7 +98,7 @@ def fetch_since(since_date, max_pages=500, verbose=True):
         parts += [f"limit({config.PAGE_LIMIT})", f'page("{nxt}")']
         status, body = _get(_url(parts))
         if status >= 400:
-            raise FetchError(f"Puslapiavimas nutrūko (HTTP {status}): {' '.join(body.split())[:300]}")
+            raise _http_error(status, body, "Puslapiavimas nutrūko:")
     return rows_all
 
 
@@ -97,6 +108,9 @@ def diagnose():
     print("Užklausa:", url)
     status, body = _get(url)
     print("HTTP:", status)
+    if status >= 400:
+        print("KLAIDA:", _http_error(status, body))
+        return False
     try:
         rows, nxt = _parse(body)
     except FetchError as e:
@@ -123,17 +137,19 @@ def diagnose():
 
 
 def read_csv(path, since_date=None):
-    """Nuskaito rankiniu būdu iš data.gov.lt atsisiųstą CSV (atsarginis variantas)."""
-    with open(path, "rb") as fh:
-        raw = fh.read()
-    text = raw.decode("utf-8-sig", errors="replace")
-    sample = text[:5000]
-    try:
-        dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
-    except csv.Error:
-        dialect = csv.excel
-    rows = list(csv.DictReader(io.StringIO(text), dialect=dialect))
-    if since_date:
-        f = config.F["doc_date"]
-        rows = [r for r in rows if (r.get(f) or "")[:10] >= since_date]
-    return rows
+    """Nuskaito rankiniu būdu iš data.gov.lt atsisiųstą CSV (atsarginis variantas).
+
+    Failas skaitomas eilutė po eilutės, todėl tinka ir viso rinkinio CSV: senesni nei
+    since_date įrašai atmetami neužimdami atminties.
+    """
+    f = config.F["doc_date"]
+    with open(path, encoding="utf-8-sig", errors="replace", newline="") as fh:
+        header = fh.readline()
+        fh.seek(0)
+        # skirtukas – dažniausias antraštės simbolis (data.gov.lt – kablelis, Excel – kabliataškis)
+        reader = csv.DictReader(fh, delimiter=max(",;\t", key=header.count))
+        missing = [c for c in (config.F["doc_nr"], f) if c not in (reader.fieldnames or [])]
+        if missing:
+            raise FetchError(f"CSV faile nėra stulpelių: {', '.join(missing)}. "
+                             f"Ar tai Infostatybos „Statinys“ rinkinys? Stulpeliai: {reader.fieldnames}")
+        return [r for r in reader if not since_date or (r.get(f) or "")[:10] >= since_date]

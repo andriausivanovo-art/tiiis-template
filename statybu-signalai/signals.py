@@ -53,10 +53,15 @@ def _uniq(values, limit=None):
     return out[:limit] if limit else out
 
 
+def _purpose_points(purpose):
+    p = (purpose or "").lower()
+    return max([w for k, w in config.SCORE["purpose"].items() if k in p] or [0])
+
+
 def score(sig_type, purposes, category, object_count):
     s = config.SCORE["type"].get(sig_type, 0)
-    p = " ".join(purposes).lower()
-    s += max([w for k, w in config.SCORE["purpose"].items() if k in p] or [0])
+    # paskirtis vertinama pagal vertingiausią statinį: tinklai ar ūkinis pastatas prie namo balo nemažina
+    s += max([_purpose_points(p) for p in purposes] or [0])
     c = (category or "").lower()
     for k, w in config.SCORE["category"].items():
         if c.startswith(k):
@@ -89,7 +94,9 @@ def build_signal(doc_nr, rows):
         lat, lon = wgs_point(r.get(F["point_wgs"]))
         if lat:
             break
-    n_obj = len(_uniq([r.get(F["unique_nr"]) or r.get(F["object_name"]) or str(i) for i, r in enumerate(rows)]))
+    # statinys atpažįstamas pagal unikalų numerį, o naujas (dar neįregistruotas) – pagal statinio_id
+    n_obj = len(_uniq([str(r.get(F["unique_nr"]) or r.get(F["object_id"]) or r.get(F["object_name"]) or i)
+                       for i, r in enumerate(rows)]))
     return {
         "signal_id": doc_nr,
         "doc_date": (first.get(F["doc_date"]) or "")[:10],

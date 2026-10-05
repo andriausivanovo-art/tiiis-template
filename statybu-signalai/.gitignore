@@ -1,0 +1,14 @@
+# Duomenų bazės ir sugeneruotos ataskaitos
+duomenys/*.sqlite
+duomenys/*.sqlite-journal
+isvestis/
+
+# Vietiniai duomenų failai. builders.csv gali turėti fizinių asmenų duomenų (BDAR),
+# JAR ir Sodros failai dideli – atsargines kopijas darykite atskirai, ne per git.
+duomenys/*.csv
+duomenys/*.zip
+duomenys/demo/
+
+# Python
+__pycache__/
+*.pyc

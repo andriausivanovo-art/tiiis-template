@@ -47,10 +47,22 @@ def _map_columns(headers):
     return out
 
 
+def _delimiter(text, candidates=",;|\t"):
+    """Skirtukas – dažniausias antraštės eilutės simbolis iš galimų.
+
+    csv.Sniffer čia nepatikimas: Sodros antraštėje yra kablelis („Savivaldybė, kurioje
+    registruota“), o sumos rašomos su dešimtainiu kableliu, todėl jis „atspėja“ kablelį.
+    """
+    header = text.split("\n", 1)[0]
+    return max(candidates, key=header.count)
+
+
 def _read_any(path):
     if path.lower().endswith(".zip"):
         with zipfile.ZipFile(path) as z:
-            name = next(n for n in z.namelist() if n.lower().endswith(".csv"))
+            name = next((n for n in z.namelist() if n.lower().endswith(".csv")), None)
+            if name is None:
+                raise ValueError(f"ZIP archyve nėra CSV failo: {path}")
             raw = z.read(name)
     else:
         with open(path, "rb") as fh:
@@ -61,11 +73,9 @@ def _read_any(path):
             break
         except UnicodeDecodeError:
             continue
-    try:
-        dialect = csv.Sniffer().sniff(text[:5000], delimiters=",;|\t")
-    except csv.Error:
-        dialect = csv.excel
-    return csv.DictReader(io.StringIO(text), dialect=dialect)
+    else:
+        text = raw.decode("utf-8", errors="replace")
+    return csv.DictReader(io.StringIO(text), delimiter=_delimiter(text))
 
 
 def _int(v):
