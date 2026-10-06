@@ -78,7 +78,7 @@ footer{max-width:1440px;margin:0 auto;padding:0 28px 32px;color:var(--muted);fon
   <select id="country" aria-label="Šalis" hidden><option value="">Visos šalys</option></select>
   <select id="muni" aria-label="Savivaldybė"><option value="">Visos savivaldybės</option></select>
   <select id="minscore" aria-label="Mažiausia svarba">
-    <option value="0">Bet kokia svarba</option><option value="4">Svarba nuo 4</option><option value="6">Svarba nuo 6</option>
+    <option value="">Bet kokia svarba</option><option value="4">Svarba nuo 4</option><option value="6">Svarba nuo 6</option>
   </select>
   <label><input type="checkbox" id="onlyBuilder"> Tik su statytoju</label>
   <span class="spacer"></span>
@@ -88,7 +88,7 @@ footer{max-width:1440px;margin:0 auto;padding:0 28px 32px;color:var(--muted);fon
   <section id="list" aria-live="polite"></section>
   <div id="mapwrap"><div id="map" role="region" aria-label="Signalų žemėlapis"></div></div>
 </main>
-<footer>Šaltiniai: VTPSI „Infostatyba“ (data.gov.lt), Latvijos BIS (data.gov.lv), Lenkijos GUNB RWDZ, Estijos Ehitisregister – atviri duomenys. Statytojų ir įmonių duomenys: JAR, Sodra.</footer>
+<footer>Šaltiniai: SSVA „Infostatyba“ (data.gov.lt, CC BY 4.0), Latvijos BIS (data.gov.lv, CC0), Lenkijos GUNB RWDZ, Estijos Ehitisregister (CC BY-SA 3.0) – atviri duomenys. Statytojų ir įmonių duomenys: JAR, Sodra.</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -148,7 +148,7 @@ if (window.L) {
 }
 
 function filtered() {
-  const q = $("#q").value.trim().toLowerCase(), muni = $("#muni").value, min = +$("#minscore").value, ob = $("#onlyBuilder").checked, cc = $("#country").value;
+  const q = $("#q").value.trim().toLowerCase(), muni = $("#muni").value, min = $("#minscore").value === "" ? -Infinity : +$("#minscore").value, ob = $("#onlyBuilder").checked, cc = $("#country").value;
   return DATA.filter(d => activeTypes.has(d.signal_type)
     && (!cc || (d.country || "LT") === cc)
     && (!muni || d.municipality === muni) && (d.score || 0) >= min
@@ -163,7 +163,7 @@ function ticks(s) {
 
 function select(id, fromMap) {
   document.querySelectorAll(".row.active").forEach(r => r.classList.remove("active"));
-  const row = document.getElementById("r-" + CSS.escape(id));
+  const row = document.getElementById("r-" + id);
   if (row) { row.classList.add("active"); if (fromMap) row.scrollIntoView({ block: "center", behavior: "smooth" }); }
   const m = markers[id];
   if (m && map && !fromMap) { map.setView(m.getLatLng(), Math.max(map.getZoom(), 13)); m.openPopup(); }

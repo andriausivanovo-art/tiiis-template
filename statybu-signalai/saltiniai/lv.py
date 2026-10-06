@@ -7,6 +7,7 @@ Naudojami trys rinkiniai:
   „Jaunbūvju ģeotelpiskie dati“  – naujų pastatų planuojama pagrindinė paskirtis.
 Rinkiniuose yra tik dabartinė bylos stadija, todėl signalas = (byla, stadija): nauja byla arba
 jau žinomos bylos stadijos pasikeitimas (pvz., „Iecere“ -> „Būvdarbi“) tampa nauju įvykiu.
+Žinomos stadijos saugomos DB lentelėje „busenos“.
 """
 import contextlib
 import json
@@ -121,44 +122,67 @@ def _float(v):
 
 
 def select(con, files, since, today=None):
-    """Atrenka įvykius iš BIS failų: files – {"lietas": kelias, "objekti": kelias, "jaunbuves": kelias}."""
+    """Atrenka įvykius iš BIS failų: files – {"lietas": kelias, "objekti": kelias, "jaunbuves": kelias}.
+
+    Kiekvienos bylos (sukurtos per LV_TRACK_DAYS) stadija saugoma lentelėje „busenos“. Įvykis –
+    nauja byla (sukurta nuo since) arba žinomos bylos stadijos pasikeitimas. Pirmą kartą senesnės
+    bylos tik įsimenamos (be signalų), todėl vėliau jų stadijų pokyčiai irgi tampa signalais.
+    Nutraukus žinomą bylą („Izbeigta“), jos ankstesni signalai pašalinami.
+    """
     if "lietas" not in files:
         raise SourceError("reikia bylų sąrašo failo („Būvniecības lietu saraksts“)")
     today = today or date.today()
     track_from = (today - timedelta(days=config.LV_TRACK_DAYS)).isoformat()
-    known = {d.split(":")[1] for d in db.known_docs(con, CODE) if d.count(":") >= 2}
-    chosen = {}
+    states = db.get_states(con, CODE)
+    if not states:                       # bazė iš senesnės versijos: būsenos atkuriamos ir įrašomos
+        states = _states_from_raw(con)
+        db.set_states(con, CODE, states.items())
+    changed, terminated, chosen = {}, [], {}
     for r in csv_rows(files["lietas"]):
         case = (r.get(F["case"]) or "").strip()
+        stage = (r.get(F["stage"]) or "").strip()
         created = norm_date(r.get(F["created"]))
-        if not case or not r.get(F["stage"]) or config.LV_STAGES.get(r[F["stage"]], ("kita",))[0] is None:
-            continue   # be numerio, be stadijos arba nutraukta byla
-        if case in known:
-            if created and created < track_from:
-                continue
+        if not case or not stage or (created and created < track_from):
+            continue
+        prev = states.get(case)
+        if prev == stage:
+            # jau žinoma stadija; jei byla nauja laikotarpyje (pvz., pakartotinai su ankstesne --since),
+            # ji pateikiama – jau įrašytas įvykis nesidubliuos (tas pats raktas)
+            if created and created >= since and config.LV_STAGES.get(stage, ("kita",))[0] is not None:
+                r["_ivykio_data"] = created
+                r["_objektai"], r["_paskirtys"] = [], []
+                chosen[case] = r
+            continue
+        changed[case] = stage
+        if config.LV_STAGES.get(stage, ("kita",))[0] is None:      # nutraukta byla
+            if prev is not None:
+                terminated.append(case)
+            continue
+        if prev is not None:
             event = today.isoformat()        # žinomos bylos nauja stadija: pastebėta šiandien
         elif created and created >= since:
             event = created                  # nauja byla
         else:
-            continue
+            continue                         # senesnė byla: tik įsimenama jos stadija
         r["_ivykio_data"] = event
         r["_objektai"], r["_paskirtys"] = [], []
         chosen[case] = r
-    if not chosen:
-        return []
-    if files.get("objekti"):
+    if files.get("objekti") and chosen:
         for o in csv_rows(files["objekti"]):
             r = chosen.get((o.get(F["case"]) or "").strip())
             if r is not None and len(r["_objektai"]) < MAX_OBJECTS:
                 r["_objektai"].append({k: o.get(F[k]) for k in ("object", "address", "territory", "cadastre",
                                                                 "lat", "lon", "works")})
-    if files.get("jaunbuves"):
+    if files.get("jaunbuves") and chosen:
         for o in csv_rows(files["jaunbuves"]):
             r = chosen.get((o.get(F["case"]) or "").strip())
             if r is not None and len(r["_paskirtys"]) < MAX_OBJECTS:
                 r["_paskirtys"].append({"use": o.get(F["use"]), "object": o.get(F["object"]),
                                         "address": o.get(F["address_new"]), "lat": o.get(F["lat"]),
                                         "lon": o.get(F["lon"])})
+    db.set_states(con, CODE, changed.items())
+    for case in terminated:
+        db.delete_signals_with_prefix(con, f"{CODE}:{case}:")
     items = []
     for case, r in chosen.items():
         key = f"{CODE}:{case}:{slug(r[F['stage']])}"
@@ -166,13 +190,36 @@ def select(con, files, since, today=None):
     return items
 
 
+def _states_from_raw(con):
+    """Būsenos iš jau įrašytų įvykių (bazei, sukurtai senesne versija be lentelės „busenos“)."""
+    states = {}
+    for doc_nr, data in con.execute("SELECT doc_nr, data_json FROM raw_records WHERE source=? ORDER BY doc_date",
+                                    (CODE,)):
+        stage = (json.loads(data).get(F["stage"]) or "").strip()
+        if stage:
+            states[doc_nr.split(":")[1]] = stage
+    return states
+
+
 def read_files(con, paths, since, today=None):
     with contextlib.ExitStack() as stack:
         files = {}
         for p in paths:
             local = stack.enter_context(local_file(p))
-            files[_kind(local)] = local
+            kind = _kind(local)
+            if kind in files:
+                raise SourceError(f"du to paties tipo BIS failai ({kind}): {p}; įkelkite po vieną kiekvienos rūšies")
+            files[kind] = local
         return select(con, files, since, today)
+
+
+def point(lat, lon):
+    """BIS koordinatės (platums, garums) -> (lat, lon), jei patenka į Latvijos ribas."""
+    try:
+        la, lo = float(str(lat).replace(",", ".")), float(str(lon).replace(",", "."))
+    except (TypeError, ValueError):
+        return None, None
+    return (la, lo) if 55.5 <= la <= 58.2 and 20.8 <= lo <= 28.3 else (None, None)
 
 
 def resource_url(dataset_id):
@@ -223,7 +270,7 @@ def build_signal(doc_nr, rows, con=None):
     names = signals._uniq([o.get("object") for o in objects] or [r.get(F["name"])])
     lat = lon = None
     for o in objects + (r.get("_paskirtys") or []):
-        lat, lon = signals.wgs_point(f"{o.get('lat')} {o.get('lon')}")
+        lat, lon = point(o.get("lat"), o.get("lon"))
         if lat:
             break
     # be objekto adreso paliekame tuščią: bylos pavadinimas (dažnai su adresu) jau rodomas kaip objektas

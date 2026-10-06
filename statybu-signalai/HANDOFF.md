@@ -1,6 +1,6 @@
 # Statybų signalų sistema: perdavimas tęsti debesies sesijoje
 
-Tikslas: kas savaitę iš VTPSI „Infostatyba“ atvirų duomenų surinkti naujus statybą
+Tikslas: kas savaitę iš „Infostatyba“ (SSVA, buv. VTPSI) atvirų duomenų surinkti naujus statybą
 leidžiančius dokumentus Lietuvoje, paversti juos signalais, praturtinti statytojo
 įmonės duomenimis (JAR, Sodra) ir pateikti kaip CSV bei HTML ataskaitą.
 Kalba: Python 3.10+, tik standartinė biblioteka (be pip priklausomybių).
@@ -17,26 +17,37 @@ Kalba: Python 3.10+, tik standartinė biblioteka (be pip priklausomybių).
 | `report.py` | CSV eksportas, statytojų paieškos eilė, HTML ataskaita, statinis pavyzdys klientui |
 | `templates/ataskaita.html` | Interaktyvi ataskaita: filtrai, Leaflet žemėlapis, CSV atsisiuntimas |
 
-## Svarbūs faktai apie duomenis
+## Svarbūs faktai apie duomenis (patikrinta 2026-10-06 su tikrais duomenimis)
 
-- Rinkinys: data.gov.lt Nr. 1000, API modelis `datasets/gov/vtpsi/infostatyba/Statinys`.
+- Rinkinys: data.gov.lt Nr. 1000, API modelis `datasets/gov/ssva/infostatyba/Statinys` (2025-07 perkeltas iš
+  `vtpsi`; senasis kelias liko `config.MODEL_FALLBACKS`). Licencija CC BY 4.0, atnaujinama kasdien.
+- Tie patys duomenys (tie patys laukai, be `uuid`) – SSVA ArcGIS paslaugoje
+  `https://www.geoportal.lt/mapproxy/rest/services/infostatyba_duomenys/MapServer/0` (data.gov.lt Nr. 3740),
+  pasiekiama ir iš užsienio; programa ją naudoja, kai data.gov.lt blokuoja (`config.LT_SOURCE = "auto"`).
 - Laukai: `id, projekto_id, statinio_id, projekto_pavadinimas, projekto_reg_nr, projekto_metai,
   unikalus_numeris, statinio_paskirtis, statinio_pakeista_paskirtis, statinio_kategorija, adresas,
   statybos_rusis, statinio_pavadinimas, pastatymo_metai, kadastro_nr, ploto_reg_tipas,
-  sklypo_reg_statusas, dokumento_reg_nr, dokumento_reg_data, iraso_paaiskinimas, iraso_data,
-  dok_statusas, dok_tipo_kodas, dokumento_kategorija, dok_irasas, taskas_lks, taskas_wgs, uuid`.
-- Vienas įrašas = statinys × dokumentas. Signalas = grupė pagal `dokumento_reg_nr`.
+  sklypo_reg_statusas, dokumento_reg_nr, dokumento_reg_data, iraso_data,
+  dok_statusas, dok_tipo_kodas, dokumento_kategorija, dok_irasas, taskas_lks, taskas_wgs, uuid`
+  (`iraso_paaiskinimas` pašalintas 2026-04).
+- Vienas įrašas = statinys × dokumentas; `id` – įrašo ID (unikalus), `uuid` – dokumento ID (bendras visiems
+  jo statiniams, todėl raktu netinka). Signalas = grupė pagal `dokumento_reg_nr`.
+- **Ankstesnė šio failo prielaida buvo klaidinga:** `dok_irasas` turi tik „prasymas“, „aktas“ arba
+  „laukiama patvirtinimo“. Dokumento pavadinimas – `dokumento_kategorija` (pvz. „Leidimas statyti naują (- us)
+  statinį (- ius)“), o tipą tiksliausiai nusako `dok_tipo_kodas` (SRA – prašymas, LSNS – leidimas statyti,
+  LRS – rekonstruoti, ANN2 – statybos pradžia (be pavadinimo), ARCCR/ACCR2 – užbaigimo deklaracijos ...).
+  Klasifikuojama pagal `config.LT_DOC_TYPES`, o nežinomi kodai – pagal pavadinimą (`SIGNAL_RULES`).
+- `dokumento_reg_nr` = `<KODAS>-<NN>-<YYMMDD>-<eil. nr.>`; NN – savivaldybės kodas (`LT_SAV_BY_DOC_CODE`,
+  patikrinta su adresais), 00/20/30 – nacionaliniai išdavėjai. Miesto adresuose savivaldybė nerašoma
+  („Vilnius, Ozo g. 25“), todėl ji atpažįstama pagal miestą (`signals.CITIES`).
+- `dok_statusas`: Galiojantis, Negaliojantis, Užregistruotas, Tikrinamas, Patenkintas, Atmestas,
+  Nepatenkintas, ... („Panaikintas“ nebūna). Atmetami: `config.EXCLUDED_STATUSES`.
 - `taskas_wgs` pavyzdys: `POINT (54.6750273775 25.2213355541)` (platuma pirma). `taskas_lks`: `POINT (6060527 578771)`.
-- `dok_irasas` pavyzdžiai: „Deklaracija apie statybos užbaigimą / paskirties keitimą (tvirtina VTPSI)“,
-  „Pažyma apie statinio statybą be nukrypimų nuo esminių statinio projekto sprendinių (tvirtina ekspertas)“.
-  `dokumento_kategorija`: `aktas`, `prasymas`. `dok_statusas`: pvz. `Galiojantis`.
-- **Statytojo lauko rinkinyje nėra.** Pirmoje versijoje statytojas įrašomas rankiniu būdu į
+- **Statytojo lauko rinkinyje nėra.** Statytojas įrašomas rankiniu būdu į
   `duomenys/builders.csv` (`dokumento_reg_nr;statytojo_kodas;statytojo_pavadinimas;pastaba`).
-- **data.gov.lt ugniasienė blokavo užklausas iš užsienio duomenų centro IP.** Debesies VM greičiausiai
-  irgi bus užblokuota, todėl čia viską testuok su demonstraciniais duomenimis. Tikras paleidimas –
-  iš Lietuvos IP (savininko kompiuteris arba LT VPS).
 - Spinta užklausų sintaksė: `?dokumento_reg_data>="2026-09-01"&limit(1000)`, kitas puslapis
-  `&page("<_page.next>")`. Jei datos filtras grąžina klaidą, `fetch.py` pereina prie viso rinkinio.
+  `&page("<_page.next>")`. Tik HTTP 400 reiškia, kad netinka filtras; 404 – neteisingas modelio kelias,
+  429/5xx – kartojama, o nepavykus šalis pažymima nepasiekta.
 
 ## Būsena (2026-10-05): atlikta
 
@@ -67,14 +78,53 @@ Esamo kodo pataisymai (rasti rašant testus):
   paskirties balas – pagal vertingiausią statinį (tinklai prie namo balo nebemažina).
 - `db`: šalies stulpeliai su automatine migracija, `taskai` lentelė koordinatėms.
 
-## Kas liko (reikia Lietuvos IP arba savininko sprendimo)
+## Būsena (2026-10-06): peržiūra ir tikri duomenys
 
-- Paleisti `python sistema.py diagnose` ir pirmą `run` iš Lietuvos IP: patikrinti, ar Spinta datos filtras
-  veikia, ar `config.F` laukai sutampa ir kokia „Kita“ dalis (`dok_irasas` reikšmes pritaikyti `SIGNAL_RULES`).
-- `config.py`: `USER_AGENT` kontaktas, `INFOSTATYBA_SEARCH_URL`, `RUN_COUNTRIES`, `PL_WOJEWODZTWA`.
-- EE: pirmą kartą užsakyti ataskaitą (`ee-order --email`) ir patikrinti tikro failo formatą (skirtukas,
-  būsenų reikšmės); adapteris parašytas pagal EHR API metaduomenis, tikro failo dar nematėme.
-- Įmonių duomenys LV/PL/EE (Uzņēmumu reģistrs, KRS/REGON, äriregister) dar nejungti – kol kas tik LT JAR/Sodra.
+Nepriklausoma peržiūra (35 radiniai, 34 patvirtinti) ir tikrų duomenų tyrimas. Pagrindiniai pakeitimai:
+
+- **LT:** klasifikavimas pagal `dok_tipo_kodas`, savivaldybė iš dokumento numerio ir miesto, tikros būsenos,
+  ArcGIS atsarginis šaltinis, įrašų raktas `id`, pasikeitę įrašai perrašomi (panaikinti dokumentai dingsta),
+  ZIP/URL/Windows-1257 importas. Gyvas bandymas per ArcGIS (savaitė): ~2 200 signalų, „Kita“ – 0,
+  savivaldybė – visiems, koordinatės – 98 %.
+- **EE:** vietoj el. pašto užsakymo – viešas EHR statinių API (pokyčių srautas + dokumentų istorija +
+  statinio duomenys), signalas = naujas statybos dokumentas (`EE_DOC_TYPES`); tik pastatai; Cloudflare
+  ribojimas (~1 užklausa/s, po 429 lėtėjama, vėliau atsigauna); EE įtraukta į `run` (~35–55 min. per savaitę). El. pašto ataskaita liko atsarginiu keliu
+  (`ee-order --nuo`).
+- **LV/EE būsenos** lentelėje `busenos`: senesnių bylų stadijų pokyčiai tampa signalais, nutrauktos bylos ir
+  neįgyvendinti statiniai pašalinami (kartu su žaliais įrašais).
+- **PL:** pranešimai tikrinami 90 d. atgal (registre atsiranda vėluodami), vienos vaivadijos klaida kitų
+  nestabdo, investuotojas rodomas tik organizacijoms (BDAR).
+- **Patikimumas:** nutrūkę atsisiuntimai atpažįstami, ZIP pagal turinį, ilgi CSV laukai, tinklo klaidos.
+- **CLI ir ataskaita:** failai nebeperrašomi (`_2`, `_3`), `report --paskutinis`, `sample --savivaldybe`
+  ieško ir adrese, HTML žymeklio paspaudimas veikia visoms šalims, „Bet kokia svarba“ rodo ir neigiamus balus,
+  `run_weekly.bat` `>nul` klaida.
+- **enrich:** srautinis skaitymas, LV (UR, VID, BIS) ir EE (e-äriregister) registrų stulpeliai.
+- **PLANAS:** el. pašto rinkodara (LT nuo 2026-04-22 juridiniams asmenims be sutikimo, PL – su sutikimu),
+  BDAR (adresai, kadastro numeriai, verslininkų vardai), PVM registracija paslaugoms ES įmonėms.
+- **Antroji peržiūra (21 radinys, visi patvirtinti ir pataisyti):** EE pokyčių srauto žymė (nepavykęs ar
+  pavėlavęs paleidimas nieko nepraranda), dalinis rezultatas išsaugomas (`PartialSourceError`, kodas 2),
+  pertraukiklis, kai EHR neatsako, ribotuvas atsigauna po 429; LT – vėlesni būsenų pokyčiai (atmesti
+  prašymai) pagal `iraso_data`, nauji kodai, `diagnose` rodo nežinomus kodus ir per ArcGIS; PL – investuotojų
+  filtras pagal ištisus žodžius, nepavykęs failas imamas kitą kartą nuo praleistos datos; LV/EE – būsenos
+  užpildomos iš senesnės bazės, `--since 2000-01-01` vėl veikia; CLI – `sample` neperrašo, licencijos
+  pavyzdyje, „ne signalai“ skaičiuojami atskirai; PLANAS – Lenkijoje ir skambučiams reikia sutikimo.
+- Gyvi bandymai 2026-10-06: LT per ArcGIS (savaitė, ~2 200 signalų), EE per API (para, 243 pastatai,
+  117 signalų, 8,5 min.).
+- **Trečiasis patikrinimas (pataisymų patikra, 14 radinių, pataisyti):** EE – atidėtiems statiniams
+  išlaikomas platesnis dokumentų laikotarpis, pakartojimai sujungiami su srautu, apdorojami po jo ir
+  pasibaigia po `EE_API_RETRY_TIMES`, srautas skaitomas tik iki `EE_API_MAX_BUILDINGS`; LV/EE – atkurtos
+  būsenos įrašomos; PL – „Spółka z o.o.“, viešųjų įstaigų būdvardžiai, seni vardai išvalomi perskaičiuojant;
+  LT – nepavykusi būsenų užklausa – dalinis rezultatas su žyme; seną bazę pirmą kartą perskaičiuoja visą.
+- Testai: 129, praeina su Python 3.10–3.13; tinklo užklausos testuose draudžiamos.
+
+## Kas liko (reikia savininko sprendimo arba Lietuvos IP)
+
+- `python sistema.py diagnose` iš Lietuvos IP: ar data.gov.lt atsako naujuoju `ssva` keliu (iš čia
+  neprieinama); jei ne – sistema vis tiek veiks per ArcGIS.
+- `config.py`: `USER_AGENT` kontaktas, `INFOSTATYBA_SEARCH_URL`, `RUN_COUNTRIES`, `PL_WOJEWODZTWA`,
+  ar įtraukti Estijos inžinerinius statinius (`EE_RAJATISED`).
+- Kodai be pavadinimo (ANN2, PTDP, PPVA, LNTO) atpažinti pagal įrašus – vertėtų patikslinti su SSVA.
+- PL ir EE statytojų/investuotojų įmonių duomenys (KRS, äriregister) – tik per `builders.csv` ir `enrich`.
 
 ## Priėmimo kriterijai
 

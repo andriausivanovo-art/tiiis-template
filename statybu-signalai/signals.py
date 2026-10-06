@@ -3,14 +3,62 @@
 import re
 
 import config
+from saltiniai import fold
 
 F = config.F
 
 _MUNI_RE = re.compile(r"([A-ZĄČĘĖĮŠŲŪŽ][\wąčęėįšųūž\-]*(?:\s(?:r\.|rajono|m\.|miesto))?\s?sav\.)")
 _NUM_RE = re.compile(r"-?\d+(?:\.\d+)?")
 
+# 60 Lietuvos savivaldybių: (pavadinimas kilmininku, rūšis: m – miesto, r – rajono, "" – be rūšies)
+MUNICIPALITIES = [
+    ("Akmenės", "r"), ("Alytaus", "m"), ("Alytaus", "r"), ("Anykščių", "r"), ("Birštono", ""), ("Biržų", "r"),
+    ("Druskininkų", ""), ("Elektrėnų", ""), ("Ignalinos", "r"), ("Jonavos", "r"), ("Joniškio", "r"),
+    ("Jurbarko", "r"), ("Kaišiadorių", "r"), ("Kalvarijos", ""), ("Kauno", "m"), ("Kauno", "r"),
+    ("Kazlų Rūdos", ""), ("Kėdainių", "r"), ("Kelmės", "r"), ("Klaipėdos", "m"), ("Klaipėdos", "r"),
+    ("Kretingos", "r"), ("Kupiškio", "r"), ("Lazdijų", "r"), ("Marijampolės", ""), ("Mažeikių", "r"),
+    ("Molėtų", "r"), ("Neringos", ""), ("Pagėgių", ""), ("Pakruojo", "r"), ("Palangos", "m"), ("Panevėžio", "m"),
+    ("Panevėžio", "r"), ("Pasvalio", "r"), ("Plungės", "r"), ("Prienų", "r"), ("Radviliškio", "r"),
+    ("Raseinių", "r"), ("Rietavo", ""), ("Rokiškio", "r"), ("Skuodo", "r"), ("Šakių", "r"), ("Šalčininkų", "r"),
+    ("Šiaulių", "m"), ("Šiaulių", "r"), ("Šilalės", "r"), ("Šilutės", "r"), ("Širvintų", "r"), ("Švenčionių", "r"),
+    ("Tauragės", "r"), ("Telšių", "r"), ("Trakų", "r"), ("Ukmergės", "r"), ("Utenos", "r"), ("Varėnos", "r"),
+    ("Vilkaviškio", "r"), ("Vilniaus", "m"), ("Vilniaus", "r"), ("Visagino", ""), ("Zarasų", "r"),
+]
+# Miestų adresuose savivaldybė nerašoma („Vilnius, Ozo g. 25“): miestas vardininku -> savivaldybė
+CITIES = {
+    "Vilnius": "Vilniaus m. sav.", "Grigiškės": "Vilniaus m. sav.", "Kaunas": "Kauno m. sav.",
+    "Klaipėda": "Klaipėdos m. sav.", "Šiauliai": "Šiaulių m. sav.", "Panevėžys": "Panevėžio m. sav.",
+    "Alytus": "Alytaus m. sav.", "Palanga": "Palangos m. sav.", "Marijampolė": "Marijampolės sav.",
+    "Druskininkai": "Druskininkų sav.", "Birštonas": "Birštono sav.", "Elektrėnai": "Elektrėnų sav.",
+    "Visaginas": "Visagino sav.", "Kazlų Rūda": "Kazlų Rūdos sav.", "Kalvarija": "Kalvarijos sav.",
+    "Pagėgiai": "Pagėgių sav.", "Rietavas": "Rietavo sav.", "Neringa": "Neringos sav.", "Nida": "Neringos sav.", "Juodkrantė": "Neringos sav.",
+    # rajonų savivaldybių centrai ir didesni miestai
+    "Naujoji Akmenė": "Akmenės r. sav.", "Anykščiai": "Anykščių r. sav.", "Biržai": "Biržų r. sav.",
+    "Ignalina": "Ignalinos r. sav.", "Jonava": "Jonavos r. sav.", "Joniškis": "Joniškio r. sav.",
+    "Jurbarkas": "Jurbarko r. sav.", "Kaišiadorys": "Kaišiadorių r. sav.", "Garliava": "Kauno r. sav.",
+    "Kelmė": "Kelmės r. sav.", "Kėdainiai": "Kėdainių r. sav.", "Gargždai": "Klaipėdos r. sav.",
+    "Kretinga": "Kretingos r. sav.", "Kupiškis": "Kupiškio r. sav.", "Lazdijai": "Lazdijų r. sav.",
+    "Mažeikiai": "Mažeikių r. sav.", "Molėtai": "Molėtų r. sav.", "Pakruojis": "Pakruojo r. sav.",
+    "Pasvalys": "Pasvalio r. sav.", "Plungė": "Plungės r. sav.", "Prienai": "Prienų r. sav.",
+    "Radviliškis": "Radviliškio r. sav.", "Raseiniai": "Raseinių r. sav.", "Rokiškis": "Rokiškio r. sav.",
+    "Skuodas": "Skuodo r. sav.", "Šakiai": "Šakių r. sav.", "Šalčininkai": "Šalčininkų r. sav.",
+    "Kuršėnai": "Šiaulių r. sav.", "Šilalė": "Šilalės r. sav.", "Šilutė": "Šilutės r. sav.",
+    "Širvintos": "Širvintų r. sav.", "Švenčionys": "Švenčionių r. sav.", "Tauragė": "Tauragės r. sav.",
+    "Telšiai": "Telšių r. sav.", "Trakai": "Trakų r. sav.", "Lentvaris": "Trakų r. sav.",
+    "Ukmergė": "Ukmergės r. sav.", "Utena": "Utenos r. sav.", "Varėna": "Varėnos r. sav.",
+    "Vilkaviškis": "Vilkaviškio r. sav.", "Nemenčinė": "Vilniaus r. sav.", "Zarasai": "Zarasų r. sav.",
+}
+_CITY_BY_FOLD = {fold(k): v for k, v in CITIES.items()}
+_KIND = {"m": r"(?:m\.?|miesto)\s*", "r": r"(?:r\.?|raj\.?|rajono)\s*", "": ""}
+_MUNI_PATTERNS = [
+    (re.compile(r"(?<![a-z])" + re.escape(fold(base)).replace(r"\ ", r"\s+") + r"\s+" + _KIND[kind] + r"sav"),
+     f"{base} {kind}. sav." if kind else f"{base} sav.")
+    for base, kind in MUNICIPALITIES
+]
+
 
 def classify(doc_text):
+    """Tipas pagal dokumento pavadinimą (atsarginis būdas, kai kodo nėra LT_DOC_TYPES)."""
     t = (doc_text or "").lower()
     for code, label, keys in config.SIGNAL_RULES:
         if any(k in t for k in keys):
@@ -18,9 +66,44 @@ def classify(doc_text):
     return "kita", "Kita"
 
 
+def doc_code(row):
+    """Dokumento kodas: dok_tipo_kodas arba dokumento numerio pradžia („LSNS-21-261002-00834“ -> LSNS)."""
+    code = (row.get(F["doc_type_code"]) or "").strip().upper()
+    return code or str(row.get(F["doc_nr"]) or "").split("-", 1)[0].strip().upper()
+
+
+def doc_type(row):
+    """(tipas, žymė) pagal dokumento kodą, o nežinomam kodui – pagal pavadinimą. Tipas None – ne signalas."""
+    hit = config.LT_DOC_TYPES.get(doc_code(row))
+    if hit:
+        return hit
+    text = row.get(F["doc_text"]) or ""
+    if "patikrinimo akt" in text.lower():          # patikrinimų aktai (nauji kodai) – ne signalai
+        return None, ""
+    sig_type, label = classify(text)
+    if sig_type == "kita" and fold(row.get(F["doc_kind"])).startswith("prasym"):
+        sig_type, label = "prasymas", "Prašymas"
+    return sig_type, (text[:120] if sig_type == "kita" and text else label)
+
+
+def municipality_from_doc(doc_nr):
+    """Savivaldybė iš dokumento numerio („SRA-24-260915-03074“ -> Kauno r. sav.); '' – jei nežinoma."""
+    parts = str(doc_nr or "").split("-")
+    return config.LT_SAV_BY_DOC_CODE.get(parts[1], "") if len(parts) > 2 else ""
+
+
 def municipality(address):
+    """Savivaldybė iš adreso: „Kauno r. sav.“ (atpažįsta ir „Kauno rajono savivaldybė“, didžiąsias raides,
+    miesto adresą be savivaldybės – „Vilnius, Ozo g. 25“)."""
     if not address:
         return ""
+    text = fold(address)
+    hits = [(m.start(), name) for rx, name in _MUNI_PATTERNS for m in [rx.search(text)] if m]
+    if hits:
+        return min(hits)[1]
+    city = _CITY_BY_FOLD.get(text.split(",")[0].strip())
+    if city:
+        return city
     m = _MUNI_RE.search(address)
     if not m:
         return ""
@@ -73,14 +156,16 @@ def score(sig_type, purposes, category, object_count):
 
 
 def is_excluded(rows):
+    """Negaliojantis, atmestas ar kitaip atmestinas dokumentas arba ne signalo tipas (patikrinimas ir pan.)."""
     st = " ".join((r.get(F["doc_status"]) or "") for r in rows).lower()
-    return any(x in st for x in config.EXCLUDED_STATUSES)
+    return any(x in st for x in config.EXCLUDED_STATUSES) or (bool(rows) and doc_type(rows[0])[0] is None)
 
 
 def build_signal(doc_nr, rows):
     """Iš vieno dokumento įrašų (statinių) sudaro vieną signalą."""
     first = rows[0]
-    sig_type, label = classify(first.get(F["doc_text"]))
+    sig_type, label = doc_type(first)
+    sig_type = sig_type or "kita"
     purposes = _uniq([r.get(F["new_purpose"]) or r.get(F["purpose"]) for r in rows])
     cats = _uniq([r.get(F["category"]) for r in rows])
     # svarbiausia kategorija: ypatingasis > neypatingasis > nesudėtingasis
@@ -102,14 +187,15 @@ def build_signal(doc_nr, rows):
         "doc_date": (first.get(F["doc_date"]) or "")[:10],
         "signal_type": sig_type,
         "signal_label": label,
-        "doc_text": first.get(F["doc_text"]) or "",
+        "doc_text": first.get(F["doc_text"]) or label,
         "works_type": "; ".join(_uniq([r.get(F["works_type"]) for r in rows])),
         "purposes": "; ".join(purposes),
         "category": category,
         "object_names": "; ".join(names[:5]) + (f" (+{len(names) - 5})" if len(names) > 5 else ""),
         "object_count": n_obj,
         "address": addr,
-        "municipality": municipality(addr) or municipality(first.get(F["project_name"])),
+        "municipality": municipality_from_doc(first.get(F["doc_nr"]) or doc_nr) or municipality(addr)
+        or municipality(first.get(F["project_name"])),
         "cadastre": "; ".join(_uniq([r.get(F["cadastre"]) for r in rows], 5)),
         "project_name": first.get(F["project_name"]) or "",
         "project_nr": first.get(F["project_nr"]) or "",

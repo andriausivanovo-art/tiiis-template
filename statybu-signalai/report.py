@@ -64,8 +64,13 @@ def type_labels():
 
 
 SOURCE_NAMES = {
-    "LT": "Infostatyba (VTPSI atviri duomenys)", "LV": "BIS (Latvijos atviri duomenys)",
+    "LT": "Infostatyba (SSVA atviri duomenys)", "LV": "BIS (Latvijos atviri duomenys)",
     "PL": "GUNB RWDZ (Lenkijos atviri duomenys)", "EE": "Ehitisregister (Estijos atviri duomenys)",
+}
+# Licencijos ir nuorodos – pavyzdžio klientui poraštei (CC BY / CC BY-SA reikalauja nurodyti šaltinį ir licenciją)
+SOURCE_LICENSES = {
+    "LT": "data.gov.lt rinkinys Nr. 1000, CC BY 4.0", "LV": "data.gov.lv, CC0 1.0",
+    "PL": "wyszukiwarka.gunb.gov.pl, atviri duomenys", "EE": "livekluster.ehr.ee, CC BY-SA 3.0",
 }
 
 
@@ -153,7 +158,8 @@ def write_client_sample(rows, path, heading, period_from, period_to, limit=10, c
 <th align="left" style="padding:8px 12px;font-size:12px;color:#5E6B70;border-bottom:2px solid #1E2A2F">Etapas</th>
 <th align="left" style="padding:8px 12px;font-size:12px;color:#5E6B70;border-bottom:2px solid #1E2A2F">Statytojas</th></tr>
 {body}</table></td></tr>
-<tr><td style="padding:16px 20px 20px;font-size:13px;color:#5E6B70">{e(contact)}</td></tr>
+<tr><td style="padding:16px 20px 4px;font-size:13px;color:#5E6B70">{e(contact)}</td></tr>
+<tr><td style="padding:4px 20px 20px;font-size:11px;color:#5E6B70">Šaltiniai: {e("; ".join(f"{SOURCE_NAMES.get(c, c)} – {SOURCE_LICENSES.get(c, '')}" for c in sources))}. Duomenys atrinkti ir sutvarkyti, pateikiami „kaip yra“.</td></tr>
 </table></body></html>"""
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:

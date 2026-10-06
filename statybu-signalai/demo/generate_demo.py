@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Demonstraciniai VTPSI „Infostatyba“ (rinkinys „Statinys“) įrašai.
+"""Demonstraciniai „Infostatyba“ (SSVA, buv. VTPSI; rinkinys „Statinys“) įrašai.
 
 Laukų pavadinimai tokie pat kaip data.gov.lt rinkinyje, todėl demonstracija eina tuo pačiu
 keliu kaip tikri duomenys: raw_records -> signalai -> builders.csv -> JAR/Sodra -> ataskaita.
@@ -23,24 +23,25 @@ import uuid
 import zipfile
 from datetime import date, timedelta
 
-MODEL = "datasets/gov/vtpsi/infostatyba/Statinys"   # tas pats kaip config.MODEL
+MODEL = "datasets/gov/ssva/infostatyba/Statinys"    # tas pats kaip config.MODEL
 FIELDS = [
     "id", "projekto_id", "statinio_id", "projekto_pavadinimas", "projekto_reg_nr", "projekto_metai",
     "unikalus_numeris", "statinio_paskirtis", "statinio_pakeista_paskirtis", "statinio_kategorija", "adresas",
     "statybos_rusis", "statinio_pavadinimas", "pastatymo_metai", "kadastro_nr", "ploto_reg_tipas",
-    "sklypo_reg_statusas", "dokumento_reg_nr", "dokumento_reg_data", "iraso_paaiskinimas", "iraso_data",
+    "sklypo_reg_statusas", "dokumento_reg_nr", "dokumento_reg_data", "iraso_data",
     "dok_statusas", "dok_tipo_kodas", "dokumento_kategorija", "dok_irasas", "taskas_lks", "taskas_wgs", "uuid",
 ]
 
-# Savivaldybės: pavadinimas adrese, kodas dokumento numeryje, kadastro vietovės kodas
+# Savivaldybės: pavadinimas adrese, kodas dokumento numeryje (kaip tikruose duomenyse), kadastro vietovės
+# kodas, miestas vardininku (miestų adresuose savivaldybė nerašoma: „Vilnius, Ozo g. 25“)
 MUNIS = {
-    "VLN": ("Vilniaus m. sav.", "13", "0101"),
-    "VLR": ("Vilniaus r. sav.", "41", "4140"),
-    "KNM": ("Kauno m. sav.", "15", "1901"),
-    "KNR": ("Kauno r. sav.", "52", "5240"),
-    "KLR": ("Klaipėdos r. sav.", "55", "5540"),
-    "SLM": ("Šiaulių m. sav.", "29", "9101"),
-    "PNM": ("Panevėžio m. sav.", "27", "6101"),
+    "VLN": ("Vilniaus m. sav.", "01", "0101", "Vilnius"),
+    "VLR": ("Vilniaus r. sav.", "08", "4140", None),
+    "KNM": ("Kauno m. sav.", "21", "1901", "Kaunas"),
+    "KNR": ("Kauno r. sav.", "24", "5240", None),
+    "KLR": ("Klaipėdos r. sav.", "34", "5540", None),
+    "SLM": ("Šiaulių m. sav.", "61", "9101", "Šiauliai"),
+    "PNM": ("Panevėžio m. sav.", "51", "6101", "Panevėžys"),
 }
 
 # Vietos: (savivaldybė, gyvenamoji vietovė, gatvė, platuma, ilguma)
@@ -89,53 +90,55 @@ PLACES = {
     "tiekimo": ("PNM", "Panevėžio m.", "Tiekimo g.", 55.7250, 24.3300),
 }
 
-# Statiniai: (pavadinimas, paskirtis, kategorija)
+# Statiniai: (pavadinimas, paskirtis, kategorija) – reikšmės tokios, kokios yra tikruose duomenyse
 OBJECTS = {
     "daugiabutis": ("Daugiabutis gyvenamasis namas",
-                    "Gyvenamasis (trijų ir daugiau butų – daugiabutis) pastatas", "Ypatingasis statinys"),
+                    "Gyvenamoji (trijų ir daugiau butų - daugiabučiai pastatai)", "Ypatingasis"),
     "daugiabutis_n": ("Daugiabutis gyvenamasis namas",
-                      "Gyvenamasis (trijų ir daugiau butų – daugiabutis) pastatas", "Neypatingasis statinys"),
-    "vienbutis": ("Gyvenamasis namas", "Gyvenamasis (vieno buto) pastatas", "Neypatingasis statinys"),
-    "patalpa": ("Negyvenamoji patalpa", "Administracinė", "Neypatingasis statinys"),
-    "admin": ("Administracinis pastatas", "Administracinė", "Ypatingasis statinys"),
-    "prekyba": ("Prekybos centras", "Prekybos", "Ypatingasis statinys"),
-    "parduotuve": ("Parduotuvė", "Prekybos", "Neypatingasis statinys"),
-    "sandelis": ("Sandėlis", "Sandėliavimo", "Neypatingasis statinys"),
-    "logistika": ("Logistikos centras", "Sandėliavimo", "Ypatingasis statinys"),
-    "gamyba": ("Gamybos pastatas", "Gamybos, pramonės", "Ypatingasis statinys"),
-    "viesbutis": ("Viešbutis", "Viešbučių", "Ypatingasis statinys"),
-    "klinika": ("Klinika", "Gydymo", "Neypatingasis statinys"),
-    "ligonine": ("Ligoninės korpusas", "Gydymo", "Ypatingasis statinys"),
-    "mokykla": ("Mokykla", "Mokslo", "Ypatingasis statinys"),
-    "darzelis": ("Vaikų darželis", "Mokslo", "Neypatingasis statinys"),
-    "ukinis": ("Ūkinis pastatas", "Pagalbinio ūkio", "Nesudėtingasis statinys (I grupės)"),
-    "garazas": ("Garažas", "Garažų", "Nesudėtingasis statinys (II grupės)"),
-    "tinklai": ("Inžineriniai tinklai (vandentiekis, nuotekos)", "Inžineriniai tinklai", "Neypatingasis statinys"),
-    "aikstele": ("Automobilių stovėjimo aikštelė", "Inžinerinis statinys: susisiekimo komunikacijos",
-                 "Nesudėtingasis statinys (II grupės)"),
+                      "Gyvenamoji (trijų ir daugiau butų - daugiabučiai pastatai)", "Neypatingasis"),
+    "vienbutis": ("Gyvenamasis namas", "Gyvenamoji (vieno buto pastatai)", "Neypatingasis"),
+    "patalpa": ("Negyvenamoji patalpa", "Administracinė", "Neypatingasis"),
+    "admin": ("Administracinis pastatas", "Administracinė", "Ypatingasis"),
+    "prekyba": ("Prekybos centras", "Prekybos", "Ypatingasis"),
+    "parduotuve": ("Parduotuvė", "Prekybos", "Neypatingasis"),
+    "sandelis": ("Sandėlis", "Sandėliavimo", "Neypatingasis"),
+    "logistika": ("Logistikos centras", "Sandėliavimo", "Ypatingasis"),
+    "gamyba": ("Gamybos pastatas", "Gamybos, pramonės", "Ypatingasis"),
+    "viesbutis": ("Viešbutis", "Viešbučių", "Ypatingasis"),
+    "klinika": ("Klinika", "Gydymo", "Neypatingasis"),
+    "ligonine": ("Ligoninės korpusas", "Gydymo", "Ypatingasis"),
+    "mokykla": ("Mokykla", "Mokslo", "Ypatingasis"),
+    "darzelis": ("Vaikų darželis", "Mokslo", "Neypatingasis"),
+    "ukinis": ("Ūkinis pastatas", "Pagalbinio ūkio", "Nesudėtingasis"),
+    "garazas": ("Garažas", "Garažų", "Nesudėtingasis"),
+    "tinklai": ("Vandentiekio ir nuotekų tinklai", "Vandentiekio tinklų", "Neypatingasis"),
+    "aikstele": ("Automobilių stovėjimo aikštelė", "Kiti inžineriniai statiniai", "Nesudėtingasis"),
 }
 
-# Dokumentai: (numerio priešdėlis, dok_irasas, dokumento_kategorija, statybos rūšis)
+# Dokumentai: (dok_tipo_kodas, dokumento_kategorija, dok_irasas, statybos rūšis, būsena) – kaip tikruose
+# duomenyse: dok_irasas būna tik „prasymas“ arba „aktas“, o ANN2 neturi kategorijos pavadinimo.
 DOC_TYPES = {
-    "prasymas": ("PRA", "Prašymas išduoti statybą leidžiantį dokumentą", "prasymas", "Naujo statinio statyba"),
-    "nauja": ("LSNS", "Leidimas statyti naują (-us) statinį (-ius) (tvirtina savivaldybė)", "aktas",
-              "Naujo statinio statyba"),
-    "rekonstrukcija": ("LRS", "Leidimas rekonstruoti statinį (-ius) (tvirtina savivaldybė)", "aktas",
-                       "Statinio rekonstravimas"),
-    "atnaujinimas": ("LAP", "Leidimas atnaujinti (modernizuoti) pastatą (-us) (tvirtina savivaldybė)", "aktas",
-                     "Pastato atnaujinimas (modernizavimas)"),
-    "paskirtis": ("LPP", "Leidimas pakeisti statinio (patalpos) paskirtį (tvirtina savivaldybė)", "aktas",
-                  "Statinio paskirties keitimas"),
-    "pritarimas": ("RP", "Rašytinis pritarimas statinio projektui (tvirtina savivaldybė)", "aktas",
-                   "Statinio paprastasis remontas"),
-    "griovimas": ("LGS", "Leidimas griauti statinį (-ius) (tvirtina savivaldybė)", "aktas", "Statinio griovimas"),
-    "pradzia": ("PSP", "Pranešimas apie statybos pradžią", "aktas", "Naujo statinio statyba"),
-    "uzb_aktas": ("SUA", "Statybos užbaigimo aktas (tvirtina VTPSI)", "aktas", "Naujo statinio statyba"),
-    "uzb_deklaracija": ("SUD", "Deklaracija apie statybos užbaigimą / paskirties keitimą (tvirtina VTPSI)",
-                        "aktas", "Naujo statinio statyba"),
-    "uzb_pazyma": ("PSBN", "Pažyma apie statinio statybą be nukrypimų nuo esminių statinio projekto sprendinių "
-                           "(tvirtina ekspertas)", "aktas", "Naujo statinio statyba"),
-    "ekspertize": ("SPE", "Statinio projekto ekspertizės aktas", "aktas", "Naujo statinio statyba"),
+    "prasymas": ("SRA", "Prašymas išduoti statybą leidžiantį dokumentą", "prasymas", "Naujo statinio statyba",
+                 "Užregistruotas"),
+    "nauja": ("LSNS", "Leidimas statyti naują (- us) statinį (- ius)", "aktas", "Naujo statinio statyba",
+              "Galiojantis"),
+    "rekonstrukcija": ("LRS", "Leidimas rekonstruoti statinį (- ius)", "aktas", "Statinio rekonstravimas",
+                       "Galiojantis"),
+    "atnaujinimas": ("LAP", "Leidimas atnaujinti (modernizuoti) pastatą (- us)", "aktas",
+                     "Statinio kapitalinis remontas", "Galiojantis"),
+    "paskirtis": ("LPSP", "Leidimas pakeisti statinio (-ių) / patalpos (-ų) paskirtį", "aktas",
+                  "Statybos darbai neatliekami arba statinio/patalpų paskirties keitimas", "Galiojantis"),
+    "pritarimas": ("RPSP", "Rašytinis pritarimas statinio projektui", "aktas", "Statinio paprastasis remontas",
+                   "Galiojantis"),
+    "griovimas": ("LGS", "Leidimas nugriauti statinį (-ius)", "aktas", "Statinio griovimas", "Galiojantis"),
+    "pradzia": ("ANN2", None, "prasymas", "Naujo statinio statyba", "Užregistruotas"),
+    "uzb_aktas": ("ACCA", "Statybos užbaigimo aktas", "aktas", "Naujo statinio statyba", "Galiojantis"),
+    "uzb_deklaracija": ("ARCCR", "Deklaracija apie statybos užbaigimą / paskirties keitimą (tik registruojama)",
+                        "aktas", "Naujo statinio statyba", "Galiojantis"),
+    "uzb_pazyma": ("ACUB2", "Pažyma apie statinio statybą be nukrypimų nuo esminių statinio projekto sprendinių "
+                            "(tvirtina ekspertas)", "aktas", "Naujo statinio statyba", "Galiojantis"),
+    "ekspertize": ("PEKA", "Projekto (jo dalies) ekspertizės aktas", "aktas", "Naujo statinio statyba",
+                   "Galiojantis"),
 }
 # Šie dokumentai liečia jau esamus statinius: jie turi unikalų numerį ir pastatymo metus
 EXISTING = {"rekonstrukcija", "atnaujinimas", "paskirtis", "pritarimas", "griovimas"}
@@ -194,7 +197,7 @@ DOCS = [
     ("uzb_pazyma", "kirtimu", 8, "logistika", ["sandelis"], None),
     ("pritarimas", "gedimino", 10, None, ["admin"], None),
     ("nauja", "pilaites", 12, "busta", ["daugiabutis_n"],
-     {"statusas": "Panaikintas", "paaiskinimas": "Dokumentas panaikintas statytojo prašymu"}),
+     {"statusas": "Negaliojantis"}),
     ("prasymas", "pilaites", 11, None, ["mokykla", "tinklai"], None),
     ("ekspertize", "zirmunai", 3, None, ["daugiabutis"], None),
     ("nauja", "riese", 4, "fizinis", ["vienbutis", "ukinis"], None),
@@ -276,14 +279,18 @@ def generate(today=None, seed=1000):
     row_id, object_id = 812000, 4410000
     for n, (kind, place, days_ago, builder, objects, extra) in enumerate(DOCS, start=1):
         extra = extra or {}
-        prefix, doc_text, doc_cat, works = DOC_TYPES[kind]
+        prefix, doc_cat, doc_kind, works, status = DOC_TYPES[kind]
         works = extra.get("rusis", works)
         muni_key, settlement, street, lat0, lon0 = PLACES[place]
-        muni, muni_code, kv = MUNIS[muni_key]
+        muni, muni_code, kv, city = MUNIS[muni_key]
+        if prefix in ("ANN2", "ACUB2", "ARCCR"):
+            muni_code = "00"          # šiuos dokumentus registruoja ne savivaldybė (kodas baigiasi nuliu)
+        elif prefix == "ACCA":
+            muni_code = "30"
         doc_date = today - timedelta(days=days_ago)
         doc_nr = f"{prefix}-{muni_code}-{doc_date:%y%m%d}-{rng.randint(100, 9999):05d}"
         house = f"{rng.randint(1, 120)}{rng.choice(['', '', '', 'A', 'B'])}"
-        address = f"{muni}, {settlement}, {street} {house}"
+        address = f"{city}, {street} {house}" if city else f"{muni}, {settlement}, {street} {house}"
         lat0 += rng.uniform(-0.004, 0.004)
         lon0 += rng.uniform(-0.006, 0.006)
         names = []
@@ -297,6 +304,7 @@ def generate(today=None, seed=1000):
         project_nr = f"P-{muni_code}-{doc_date:%y}-{rng.randint(1, 99999):05d}"
         plot = f"{kv}/{rng.randint(1, 9999):04d}:{rng.randint(1, 999)}"
         hour = rng.randint(8, 16)
+        doc_uuid = uid()          # „uuid“ – dokumento ID, bendras visiems jo statiniams
         for spec in objects:
             key, _, new_purpose = spec.partition(">")
             obj_name, purpose, category = OBJECTS[key]
@@ -337,15 +345,14 @@ def generate(today=None, seed=1000):
                 "sklypo_reg_statusas": "Įregistruotas",
                 "dokumento_reg_nr": doc_nr,
                 "dokumento_reg_data": doc_date.isoformat(),
-                "iraso_paaiskinimas": extra.get("paaiskinimas"),
                 "iraso_data": f"{doc_date.isoformat()}T{hour:02d}:{rng.randint(0, 59):02d}:{rng.randint(0, 59):02d}",
-                "dok_statusas": extra.get("statusas", "Galiojantis"),
+                "dok_statusas": extra.get("statusas", status),
                 "dok_tipo_kodas": prefix,
                 "dokumento_kategorija": doc_cat,
-                "dok_irasas": doc_text,
+                "dok_irasas": doc_kind,
                 "taskas_lks": f"POINT ({north} {east})",
                 "taskas_wgs": f"POINT ({lat:.10f} {lon:.10f})",
-                "uuid": uid(),
+                "uuid": doc_uuid,
             })
         if builder == "fizinis":
             builders.append((doc_nr, "", "Fizinis asmuo", "fizinio asmens duomenų nekaupiame (BDAR)"))
@@ -510,13 +517,16 @@ EE_BUILDINGS = [
     ("EHITIS_SEISUND_KAVAN", 11222, "", "H", "37", "784", "Harju maakond, Tallinn, Kristiine linnaosa, Tulika tn 19",
      59.4250, 24.7180, 3, 3, None),
     ("Püstitamisel", 12201, "DEMO ärihoone", "H", "37", "784", "Harju maakond, Tallinn, Kesklinna linnaosa, Narva mnt 7",
-     59.4380, 24.7650, 300, 5, None),
+     59.4380, 24.7650, 12, 5, None),
     ("EHITIS_SEISUND_KAVAN", 12529, "Laohoone", "H", "79", "793", "Tartu maakond, Tartu linn, Tartu linn, Ringtee tn 44",
      58.3640, 26.7480, 6, 6, None),
     ("Püstitamisel", 11101, "", "H", "37", "198", "Harju maakond, Harku vald, Tabasalu alevik, Klooga mnt 30",
-     59.4280, 24.5600, 200, 2, None),
+     59.4280, 24.5600, 10, 2, None),
+    # seniai statomas: pirmą kartą tik įsimenamas, signalo nėra
+    ("EHITIS_SEISUND_PYSTI", 11101, "", "H", "37", "198", "Harju maakond, Harku vald, Harku alevik, Pargi tee 7",
+     59.3910, 24.6150, 900, 1, None),
     ("EHITIS_SEISUND_PYSTI", 11222, "", "H", "37", "890", "Harju maakond, Viimsi vald, Haabneeme alevik, Randvere tee 9",
-     59.5100, 24.8250, 400, 9, None),
+     59.5100, 24.8250, 9, 9, None),
     ("EHITIS_SEISUND_OLEMA", 12111, "DEMO hotell", "H", "68", "624", "Pärnu maakond, Pärnu linn, Pärnu linn, Ranna pst 5",
      58.3780, 24.5000, 700, 4, "this_year"),
     ("EHITIS_SEISUND_KAVAN", 12519, "Tootmishoone", "H", "37", "653", "Harju maakond, Rae vald, Peetri alevik, Kesk tee 20",

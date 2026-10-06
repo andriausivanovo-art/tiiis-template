@@ -6,16 +6,23 @@ skirtuką atpažįstame automatiškai):
   wynik_<vaivadija>.zip          – statybos leidimai (pozwolenia na budowę) su investuotoju;
   wynik_zgloszenia_2022_up.zip   – pranešimai apie statybą (zgłoszenia) visai šaliai.
 Koordinačių registre nėra, todėl Lenkijos signalai rodomi sąraše, bet ne žemėlapyje.
-Projektuotojų vardai ir pavardės (asmens duomenys) į bazę neįrašomi.
+Projektuotojų vardai ir pavardės (asmens duomenys) į bazę neįrašomi. Investuotojas rodomas tik tada, kai
+tai organizacija (bendrovė, savivaldybė, įstaiga); fizinių asmenų ir verslininkų vardai paslepiami.
 """
 import contextlib
+import csv
 import os
+import re
 import shutil
+import sys
 import tempfile
 import urllib.request
+import zipfile
+from datetime import date, timedelta
 
 import config
-from saltiniai import SourceError, csv_rows, download, fold, header_of, local_file, norm_date
+import db
+from saltiniai import PartialSourceError, SourceError, csv_rows, download, fold, header_of, local_file, norm_date
 
 CODE = "PL"
 NAME = "Lenkija – GUNB RWDZ (wyszukiwarka.gunb.gov.pl)"
@@ -29,6 +36,53 @@ P = {
     "works": "nazwa_zamierzenia_bud", "name": "nazwa_zam_budowlanego", "volume": "kubatura",
     "unit": "jednosta_numer_ew", "precinct": "obreb_numer", "plot": "numer_dzialki",
 }
+# Organizacijos požymiai investuotojo pavadinime: teisinė forma arba viešasis subjektas (visais atvejais –
+# ištisi žodžiai, kad nesutaptų su pavardėmis: Wojewódzki, Parafiniuk, Szkołuda). Kiti – fiziniai asmenys ar
+# verslininkai (pvz., „Katarzyna Kowalska“, „PHU Jan Nowak“, civilinė bendrija) – jų vardų nerodome (BDAR).
+_PERSONAL = re.compile(r"spółk\w*\s+cywiln|\bs\.\s?c\.|\bwspólnicy\b", re.I)
+_ORG = re.compile(
+    # teisinės formos
+    r"\bsp\.?\s*z\s*\.?\s*o\.?\s*o\b|sp\.\s*z\s*\.?\s*o\.\s*o|\bspółk\w*\s+z\s*\.?\s*o\.?\s*o\b|"
+    r"\bspółk[aiąe]\s+(?:akcyjn|komandytow|jawn|partnersk|z\s+ograniczon)|\bs\.\s?a\.?(?!\w)|\bsa\b|"
+    r"\bsp\.\s?[jkp]\.?(?!\w)|\bsp\.?\s?k\.?\s?a\b|\bspółdzielni\w*|\bbank\w*\s+spółdzielcz|"
+    # samorządas ir valstybė
+    r"\bgmin(?:a|y|ie|ą|ę)\b|\bmiast(?:o|a|u)\b|\bm\.\s?st\.|\bpowiat(?:u|em|owi)?\b|\bwojewódz(?:two|twa|twu)\b|"
+    r"\bwojewódzk\w*\s+(?:szpital|ośrod|bibliotek|centrum|zarząd|fundusz|inspektorat|urząd|komend|sąd)|"
+    r"skarb\s+państwa|\bpaństwow\w*|\burz(?:ąd|ędu)\b|\bzarząd\b|\bsamorząd\w*|\bdyrekcj\w*|"
+    r"\bgeneralny\s+dyrektor|\bministerstw\w*|\bkomend(?:a|y)\b|\bjednostk\w*\s+wojskow|\bstraż\w*\s+pożarn|"
+    r"\bagencj\w*\s+(?:mienia|restrukturyzacji|rozwoju)|\bkrajow\w*\s+ośrod|\bgddkia\b|"
+    # įstaigos (tik su viešojo subjekto požymiu, kad nesutaptų su verslininkų pavadinimais)
+    r"\bfundacj(?:a|i|ę)\b|\bstowarzyszeni(?:e|a)\b|\bparafi(?:a|i|ę)\b|\bkości(?:ół|oła)\b|"
+    r"\bzgromadzeni(?:e|a)\b|diecezj(?:a|i)\b|\bwspólnot\w*\s+mieszkaniow|\buniwersytet\w*|\bpolitechnik\w*|"
+    r"\bakademi\w*\s+(?:wychowania|medyczn|górniczo|sztuk|muzyczn|ekonomiczn|rolnicz|morsk|wojsk|pedagogiczn)|"
+    r"\bszkoł\w*\s+(?:podstawow|ponadpodstawow|specjaln|muzyczn|policealn|branżow|nr)|\bzespół\s+szkół|"
+    r"\b(?:publiczn|samorządow|miejsk|gminn)\w*\s+przedszkol|\bprzedszkol\w*\s+(?:nr|publiczn|samorządow|miejsk)|"
+    r"\bszpital\w*\s+(?:wojewódzk|miejsk|powiatow|kliniczn|uniwersyteck|specjalistyczn)|\bsamodzieln\w*\s+publiczn|"
+    r"\bzespół\s+opieki|\b(?:sp)?zoz\b|\bnadleśnictw\w*|\blasy\s+państwowe|\bmuzeum\b|"
+    r"\b(?:gminn|miejsk|powiatow|wojewódzk)\w*\s+ośrod\w*|\bośrod\w*\s+(?:sportu|pomocy\s+społecznej)|"
+    r"\bzakład\w*\s+(?:wodociąg|gospodarki\s+komunalnej|karny|ubezpieczeń)|\bprzedsiębiorstw\w*\s+wodociąg|"
+    r"\b(?:mpwik|pwik|mpk|zgk)\b|\bpkp\b|\bpolskie\s+sieci|\btauron\b|\benea\b|\benerga\b|\bpge\b|\borlen\b|"
+    r"\bgaz-system\b|"
+    # viešojo lygmens būdvardis + įstaigos daiktavardis („Wojewódzkie Pogotowie Ratunkowe“, „Narodowy Instytut“,
+    # „Powiatowe Centrum“, „Gminne Przedsiębiorstwo Komunalne“); pavardė vien ja nepasižymi
+    r"\b(?:gminn|miejsk|powiatow|wojewódzk|narodow|państwow|krajow|regionaln|samorządow|publiczn)\w*\s+"
+    r"(?:\w+\s+){0,2}(?:przedsiębiorstw|centrum|centr|inspektor|pogotowi|instytut|zarząd|ośrod|klub|szpital|"
+    r"bibliotek|fundusz|urząd|zakład|związ|dom|teatr|muzeum|port|zespół|sąd|komend|biur|archiwum|stadion|"
+    r"cmentarz|wodociąg|spółk|towarzystw|filharmoni|oper|szkoł|przedszkol|żłob|agencj|instytucj)\w*|"
+    r"\b\w+\s+szpital\w*\b|\binstytut\w*\s+(?:matki|badawcz|naukow|techniki|technologii|transportu|"
+    r"meteorologii|geologiczn|ochrony|medycyny|onkologii|kardiologii)|\bakademi\w*\s+nauk|\bspółdziel\w*|"
+    r"\bspółk\w*\s+europejsk|\bwspólnot\w*\s+(?:mieszk|właścic)|\bklub\w*\s+sportow|"
+    r"\b(?:uczniowsk|ludow)\w*\s+klub|\bzwiąz\w*\s+(?:\w+\s+){0,3}gmin", re.I)
+
+
+def organization(name):
+    """Investuotojo pavadinimas, jei tai organizacija; kitaip None (fizinis asmuo ar verslininkas)."""
+    name = " ".join((name or "").split())
+    if not name or _PERSONAL.search(name):
+        return None
+    return name if _ORG.search(name) else None
+
+
 # Pranešimų (zgłoszenia) stulpeliai
 Z = {
     "id": "numer_ewidencyjny_system", "office_nr": "numer_ewidencyjny_urzad",
@@ -54,10 +108,17 @@ def _kind(path):
 
 
 def select_file(path, since, today=None):
-    """Vieno failo (CSV ar ZIP) įvykiai nuo since: leidimai – pagal sprendimo datą, pranešimai – pagal pateikimo."""
+    """Vieno failo (CSV ar ZIP) įvykiai nuo since: leidimai – pagal sprendimo datą, pranešimai – pagal pateikimo.
+
+    Pranešimai registre atsiranda tik pasibaigus prieštaravimo terminui (po kelių savaičių), todėl jiems
+    langas ne trumpesnis nei PL_ZGLOSZENIA_LOOKBACK_DAYS; pasikartojimų neatsiranda (raktai unikalūs).
+    """
     kind = _kind(path)
     cols = P if kind == "pozwolenie" else Z
     date_col = cols["decided"] if kind == "pozwolenie" else cols["applied"]
+    if kind == "zgloszenie":
+        today = today or date.today()
+        since = min(since, (today - timedelta(days=config.PL_ZGLOSZENIA_LOOKBACK_DAYS)).isoformat())
     items = []
     for r in csv_rows(path):
         event = norm_date(r.get(date_col))
@@ -85,17 +146,36 @@ def files_to_fetch():
     return names + ([config.PL_ZGLOSZENIA] if config.PL_ZGLOSZENIA else [])
 
 
+FAILED = "PL_FAILAS"        # busenos.source: failas -> data, nuo kurios jį reikia paimti (nepavyko praeitą kartą)
+
+
 def fetch_items(con, since, today=None):
-    items = []
+    """Visi PL failai. Nepavykęs failas praleidžiamas, bet įsimenama, nuo kada jį reikės paimti kitą kartą,
+    o šalis pažymima gauta tik iš dalies (PartialSourceError) – kitų failų įvykiai išsaugomi."""
+    items, failed = [], []
+    names = files_to_fetch()
+    behind = db.get_states(con, FAILED)
     tmp = tempfile.mkdtemp(prefix="gunb_")
     try:
-        for name in files_to_fetch():
+        for name in names:
             print(f"  PL: atsisiunčiamas {name}", flush=True)
-            path = download(config.PL_BASE_URL + name, os.path.join(tmp, name), timeout=600)
-            items.extend(select_file(path, since, today))
-            os.remove(path)
+            file_since = min(since, behind.get(name, since))
+            try:
+                path = download(config.PL_BASE_URL + name, os.path.join(tmp, name), timeout=600)
+                items.extend(select_file(path, file_since, today))
+                os.remove(path)
+            except (SourceError, OSError, ValueError, csv.Error, zipfile.BadZipFile) as e:
+                print(f"  PL: {name} praleistas: {e}", file=sys.stderr, flush=True)
+                failed.append((name, file_since, str(e)[:120]))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    con.execute("DELETE FROM busenos WHERE source=?", (FAILED,))
+    db.set_states(con, FAILED, [(name, s) for name, s, _ in failed])
+    if names and len(failed) == len(names):
+        raise SourceError(f"nepavyko gauti nė vieno GUNB failo ({', '.join(n for n, _, _ in failed)})")
+    if failed:
+        raise PartialSourceError("nepavyko: " + "; ".join(f"{n} ({e})" for n, _, e in failed)
+                                 + " – kitą kartą jie bus paimti nuo praleistos datos", items)
     return items
 
 
@@ -132,7 +212,7 @@ def build_signal(doc_nr, rows, con=None):
         p = "/".join(filter(None, [x.get("unit"), x.get("precinct"), x.get("plot")]))
         if p and p not in plots:
             plots.append(p)
-    investor = (r.get("investor") or "").strip() if permit else ""
+    investor = organization(r.get("investor")) if permit else None
     score = config.SCORE["type"].get(typ, 0) + cat_points \
         + (1 if volume and volume >= config.PL_KUBATURA_BONUS else 0)
     return {

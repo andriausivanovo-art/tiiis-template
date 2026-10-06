@@ -2,27 +2,34 @@
 """Įmonių praturtinimas: JAR ir Sodros CSV, statytojų susiejimas per builders.csv.
 
 Stulpelių pavadinimai šaltiniuose kartais keičiasi, todėl juos atpažįstame
-pagal kelis galimus variantus.
+pagal kelis galimus variantus. Tinka ir kitų šalių atviri įmonių registrai (jei statytojų
+kodus įrašote į builders.csv): Latvijos UR register.csv ir VID mokesčių failai, BIS būvkomersantų
+duomenys, Estijos e-äriregistri „lihtandmed“ CSV/ZIP.
 """
+import contextlib
 import csv
-import io
 import os
 import re
-import zipfile
 
+import saltiniai
 from db import now_iso
 
-CANDIDATES = {
-    "code": ["ja_kodas", "jarcode", "juridiniuasmenuregistrokodas", "imoneskodas", "kodas", "code"],
-    "name": ["ja_pavadinimas", "pavadinimas", "name"],
-    "legal_form": ["form_pavadinimas", "teisineforma", "form_kodas"],
-    "status": ["stat_pavadinimas", "statusas", "stat_kodas"],
-    "nace": ["ecoactcode", "evrk_kodas", "evrk", "veiklosrusieskodas"],
-    "nace_name": ["ecoactname", "evrk_pavadinimas", "veiklosrusiespavadinimas"],
-    "municipality": ["municipality", "savivaldybe", "savivaldybekurojeregistruota"],
-    "employees": ["numinsured", "apdraustujuskaicius"],
+CANDIDATES = {   # LT (JAR, Sodra), LV (UR, VID, BIS), EE (e-äriregister)
+    "code": ["ja_kodas", "jarcode", "juridiniuasmenuregistrokodas", "imoneskodas", "kodas", "regcode",
+             "registracijas_kods", "registracijas_numurs_mitnes_valsti", "ariregistri_kood", "registrikood", "code"],
+    "name": ["ja_pavadinimas", "pavadinimas", "name", "nosaukums", "nimi"],
+    "legal_form": ["form_pavadinimas", "teisineforma", "form_kodas", "type_text", "ettevotja_oiguslik_vorm",
+                   "uznemejdarbibas_forma", "komersanta_veids"],
+    "status": ["stat_pavadinimas", "statusas", "stat_kodas", "ettevotja_staatus_tekstina", "aktualais_statuss"],
+    "nace": ["ecoactcode", "evrk_kodas", "evrk", "veiklosrusieskodas", "pamatdarbibas_nace_kods"],
+    "nace_name": ["ecoactname", "evrk_pavadinimas", "veiklosrusiespavadinimas", "tegevusala"],
+    "municipality": ["municipality", "savivaldybe", "savivaldybekurojeregistruota", "asukoha_ehak_tekstina",
+                     "juridiska_adrese_atvk_nosaukums"],
+    "employees": ["numinsured", "apdraustujuskaicius", "videjais_nodarbinato_personu_skaits_cilv",
+                  "kopa_buvnieciba_nodarbinato_skaits"],
     "avg_wage": ["avgwage", "vidutinisdarbouzmokestis"],
-    "month": ["month", "menuo"],
+    "month": ["month", "menuo", "taksacijas_gads_ceturksnis", "taksacijas_gads",
+              "kalendarais_gads_par_kuru_sniegti_dati"],
 }
 
 
@@ -57,25 +64,13 @@ def _delimiter(text, candidates=",;|\t"):
     return max(candidates, key=header.count)
 
 
+@contextlib.contextmanager
 def _read_any(path):
-    if path.lower().endswith(".zip"):
-        with zipfile.ZipFile(path) as z:
-            name = next((n for n in z.namelist() if n.lower().endswith(".csv")), None)
-            if name is None:
-                raise ValueError(f"ZIP archyve nėra CSV failo: {path}")
-            raw = z.read(name)
-    else:
-        with open(path, "rb") as fh:
-            raw = fh.read()
-    for enc in ("utf-8-sig", "cp1257"):
-        try:
-            text = raw.decode(enc)
-            break
-        except UnicodeDecodeError:
-            continue
-    else:
-        text = raw.decode("utf-8", errors="replace")
-    return csv.DictReader(io.StringIO(text), delimiter=_delimiter(text))
+    """CSV arba ZIP su CSV, skaitoma srautu (registrų failai – iki kelių šimtų MB); UTF-8 ar Windows-1257."""
+    with saltiniai.open_text(path) as fh:
+        first = fh.readline()
+        names = [n.strip() for n in next(csv.reader([first], delimiter=_delimiter(first)), [])]
+        yield csv.DictReader(fh, fieldnames=names, delimiter=_delimiter(first))
 
 
 def _int(v):
@@ -98,7 +93,11 @@ def load_companies(con, path, only_codes=None):
     only_codes: jei nurodyta, įkeliamos tik šios įmonės (taupome vietą).
     Sodros faile yra keli mėnesiai – paliekame naujausią.
     """
-    reader = _read_any(path)
+    with _read_any(path) as reader:
+        return _store_companies(con, reader, only_codes)
+
+
+def _store_companies(con, reader, only_codes):
     cols = _map_columns(reader.fieldnames or [])
     if "code" not in cols:
         raise ValueError(f"Nerastas įmonės kodo stulpelis. Stulpeliai: {reader.fieldnames}")
@@ -156,12 +155,13 @@ def apply_builders(con, path):
     """Perkelia rankiniu būdu nustatytus statytojus iš builders.csv į signalus."""
     ensure_builders_file(path)
     n = 0
-    for r in _read_any(path):
-        doc = (r.get("dokumento_reg_nr") or "").strip()
-        code = (r.get("statytojo_kodas") or "").strip()
-        name = (r.get("statytojo_pavadinimas") or "").strip()
-        if doc and (code or name):
-            n += con.execute("UPDATE signals SET builder_code=?, builder_name=? WHERE signal_id=?",
-                             (code or None, name or None, doc)).rowcount
+    with _read_any(path) as reader:
+        for r in reader:
+            doc = (r.get("dokumento_reg_nr") or "").strip()
+            code = (r.get("statytojo_kodas") or "").strip()
+            name = (r.get("statytojo_pavadinimas") or "").strip()
+            if doc and (code or name):
+                n += con.execute("UPDATE signals SET builder_code=?, builder_name=? WHERE signal_id=?",
+                                 (code or None, name or None, doc)).rowcount
     con.commit()
     return n

@@ -5,6 +5,16 @@ import io
 import os
 import shutil
 import tempfile
+import urllib.request
+
+
+def _no_network(req, *a, **kw):
+    url = getattr(req, "full_url", req)
+    raise AssertionError(f"testai neturi kreiptis į tinklą: {url}")
+
+
+# Apsauga: testas, netyčia pasiekęs tikrą šaltinį, iš karto krenta (o ne laukia ar apkrauna registrą)
+urllib.request.urlopen = _no_network
 
 
 @contextlib.contextmanager

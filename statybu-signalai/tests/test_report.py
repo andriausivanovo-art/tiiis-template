@@ -61,7 +61,7 @@ class ReportTest(unittest.TestCase):
         types = {r["signal_type"] for r in self.rows}
         self.assertTrue(types <= set(config.SELLABLE_TYPES))
         all_rows = report.fetch_rows(self.con)
-        self.assertTrue({"pritarimas", "griovimas", "kita"} <= {r["signal_type"] for r in all_rows})
+        self.assertTrue({"pritarimas", "griovimas"} <= {r["signal_type"] for r in all_rows})
 
     def test_builder_name_from_jar_when_only_code_given(self):
         # builders.csv įrašytas tik kodas – pavadinimas turi ateiti iš JAR (COALESCE)
@@ -95,6 +95,10 @@ class ReportTest(unittest.TestCase):
         self.assertIn("Pavyzdys &lt;b&gt;", html)
         self.assertIn("10 objektų", html)
         self.assertEqual(html.count("<tr>\n<td"), 10)
+        ee_rows = [dict(r, country="EE") for r in self.rows[:2]]
+        path = report.write_client_sample(ee_rows, self.tmp.file("out", "ee.html"), "Estija", "a", "b")
+        with open(path, encoding="utf-8") as fh:
+            self.assertIn("CC BY-SA 3.0", fh.read())                      # Estijos duomenų licencija
         empty = report.write_client_sample([], self.tmp.file("out", "t.html"), "Tuščias", "a", "b")
         with open(empty, encoding="utf-8") as fh:
             self.assertIn("signalų nerasta", fh.read())

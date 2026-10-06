@@ -2,6 +2,7 @@
 """SQLite saugykla: žali įrašai, signalai, įmonės, paleidimų žurnalas."""
 import json
 import os
+import re
 import sqlite3
 from datetime import datetime
 
@@ -68,6 +69,15 @@ CREATE TABLE IF NOT EXISTS taskai (
     PRIMARY KEY (source, key)
 );
 
+-- Paskutinė žinoma objekto būsena (LV bylos stadija, EE statinio būsena): pokytis = naujas įvykis
+CREATE TABLE IF NOT EXISTS busenos (
+    source        TEXT NOT NULL,
+    key           TEXT NOT NULL,
+    value         TEXT,
+    updated       TEXT,
+    PRIMARY KEY (source, key)
+);
+
 CREATE TABLE IF NOT EXISTS runs (
     run_id        INTEGER PRIMARY KEY AUTOINCREMENT,
     started       TEXT,
@@ -104,34 +114,61 @@ def _migrate(con):
     con.commit()
 
 
-def insert_rows(con, source, items):
-    """Įrašo naujus žalius įrašus: items – (raktas, dokumentas, data, įrašas). Grąžina naujų skaičių."""
-    new = 0
+def insert_rows(con, source, items, update=False, stats=None):
+    """Įrašo žalius įrašus: items – (raktas, dokumentas, data, įrašas). Grąžina naujų skaičių.
+
+    update=True: jei to paties rakto įrašas pasikeitė (pvz., dokumentas panaikintas), jis perrašomas ir
+    first_seen atnaujinamas, kad `build` perskaičiuotų signalą. stats (žodynas) gauna „pakeisti“ skaičių.
+    """
+    new = changed = 0
     ts = now_iso()
     for key, doc_nr, doc_date, row in items:
-        cur = con.execute(
-            "INSERT OR IGNORE INTO raw_records(row_key, doc_nr, doc_date, data_json, first_seen, source) "
-            "VALUES (?,?,?,?,?,?)",
-            (str(key), doc_nr, (doc_date or "")[:10], json.dumps(row, ensure_ascii=False), ts, source),
-        )
-        new += cur.rowcount
+        data = json.dumps(row, ensure_ascii=False, sort_keys=True)
+        args = (str(key), doc_nr, (doc_date or "")[:10], data, ts, source)
+        cur = con.execute("INSERT OR IGNORE INTO raw_records(row_key, doc_nr, doc_date, data_json, first_seen, source) "
+                          "VALUES (?,?,?,?,?,?)", args)
+        if cur.rowcount:
+            new += 1
+        elif update:
+            changed += con.execute("UPDATE raw_records SET doc_nr=?, doc_date=?, data_json=?, first_seen=? "
+                                   "WHERE row_key=? AND data_json != ?",
+                                   (doc_nr, (doc_date or "")[:10], data, ts, str(key), data)).rowcount
     con.commit()
+    if stats is not None:
+        stats["pakeisti"] = stats.get("pakeisti", 0) + changed
     return new
 
 
 def lt_items(rows, fields):
-    """Infostatybos įrašai -> (raktas, dokumentas, data, įrašas)."""
+    """Infostatybos įrašai -> (raktas, dokumentas, data, įrašas).
+
+    Raktas – įrašo (statinys × dokumentas) ID: rinkinio „id“ (toks pat data.gov.lt ir ArcGIS paslaugoje),
+    jei jo nėra – Spinta _id. Laukas „uuid“ yra
+    dokumento ID (bendras visiems dokumento statiniams), todėl raktu netinka.
+    """
     for r in rows:
-        key = r.get(fields["row_id"]) or r.get("_id") or r.get("id")
+        key = r.get(fields["row_id"]) or r.get("_id")
         if not key:
             # be ID: sudarome iš dokumento ir statinio
-            key = f'{r.get(fields["doc_nr"])}|{r.get(fields["unique_nr"])}|{r.get(fields["object_name"])}'
+            key = "|".join(str(r.get(fields[k]) or "") for k in ("doc_nr", "object_id", "unique_nr", "object_name"))
         yield key, r.get(fields["doc_nr"]), r.get(fields["doc_date"]), r
 
 
-def insert_raw(con, rows, fields):
-    """Įrašo naujus Lietuvos (Infostatybos) žalius įrašus. Grąžina, kiek buvo naujų."""
-    return insert_rows(con, "LT", lt_items(rows, fields))
+def existing_keys(con, source, keys):
+    """Kurie iš raktų jau yra raw_records (šaltinio)."""
+    found = set()
+    keys = [str(k) for k in keys]
+    for i in range(0, len(keys), 500):
+        chunk = keys[i:i + 500]
+        found.update(r[0] for r in con.execute(
+            "SELECT row_key FROM raw_records WHERE source=? AND row_key IN (%s)" % ",".join("?" * len(chunk)),
+            [source] + chunk))
+    return found
+
+
+def insert_raw(con, rows, fields, stats=None):
+    """Įrašo Lietuvos (Infostatybos) žalius įrašus; pasikeitę įrašai perrašomi. Grąžina naujų skaičių."""
+    return insert_rows(con, "LT", lt_items(rows, fields), update=True, stats=stats)
 
 
 def raw_groups(con, doc_nrs=None):
@@ -198,27 +235,57 @@ def upsert_signal(con, s):
         )
         return True
     sets = ",".join(f"{c}=?" for c in cols[1:])
+    # jei statytoją pateikia šaltinis, jo reikšmė atnaujinama (pvz., pagal naują filtrą paslėptas asmens
+    # vardas), nebent įrašytas rankinis kodas; builders.csv įrašai po to pritaikomi iš naujo
+    name_sql = "CASE WHEN builder_code IS NULL THEN ? ELSE builder_name END" if "builder_name" in s \
+        else "COALESCE(builder_name, ?)"
     con.execute(f"UPDATE signals SET {sets}, country=?, builder_code=COALESCE(builder_code, ?), "
-                f"builder_name=COALESCE(builder_name, ?), updated=? WHERE signal_id=?",
+                f"builder_name={name_sql}, updated=? WHERE signal_id=?",
                 [s.get(c) for c in cols[1:]] + [country, b_code, b_name, ts, s["signal_id"]])
     return False
 
 
 def docs_to_build(con):
-    """Dokumentai, kurių signalo dar nėra arba kuriems po paskutinio perskaičiavimo atsirado naujų įrašų.
+    """Dokumentai, kurių įrašai atsirado ar pasikeitė po paskutinio perskaičiavimo (žymė lentelėje „busenos“).
 
-    Negaliojantys dokumentai signalo neturi, todėl tikrinami kaskart iš naujo (jų nedaug).
+    Be žymės (nauja arba senesnės versijos bazė) – visi dokumentai, kad nauji tipai, savivaldybės ir
+    filtrai būtų pritaikyti ir anksčiau gautiems signalams.
     """
-    cur = con.execute("""SELECT DISTINCT r.doc_nr FROM raw_records r
-                         LEFT JOIN signals s ON s.signal_id = r.doc_nr
-                         WHERE r.doc_nr IS NOT NULL AND r.doc_nr != ''
-                           AND (s.signal_id IS NULL OR r.first_seen >= s.updated)""")
+    mark = get_states(con, "BUILD").get("paskutinis")
+    cur = con.execute("SELECT DISTINCT doc_nr FROM raw_records WHERE doc_nr IS NOT NULL AND doc_nr != ''"
+                      + (" AND first_seen >= ?" if mark else ""), (mark,) if mark else ())
     return [row["doc_nr"] for row in cur]
 
 
 def delete_signal(con, signal_id):
     """Pašalina signalą (pvz., dokumentas panaikintas). Grąžina True, jei toks buvo."""
     return con.execute("DELETE FROM signals WHERE signal_id=?", (signal_id,)).rowcount > 0
+
+
+def delete_signals_with_prefix(con, prefix):
+    """Pašalina visus objekto signalus ir jų žalius įrašus (pvz., „LV:BIS-...:“ – nutraukta byla).
+
+    Žali įrašai šalinami, kad `build --all` signalų neatkurtų. Grąžina pašalintų signalų skaičių.
+    """
+    pattern = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+    n = con.execute("DELETE FROM signals WHERE signal_id LIKE ? ESCAPE '\\'", (pattern,)).rowcount
+    con.execute("DELETE FROM raw_records WHERE doc_nr LIKE ? ESCAPE '\\'", (pattern,))
+    con.commit()
+    return n
+
+
+def get_states(con, source):
+    """{raktas: būsena} – paskutinės žinomos šaltinio objektų būsenos."""
+    return {r["key"]: r["value"] for r in con.execute("SELECT key, value FROM busenos WHERE source=?", (source,))}
+
+
+def set_states(con, source, pairs):
+    """Įrašo pasikeitusias būsenas: pairs – (raktas, būsena)."""
+    ts = now_iso()
+    con.executemany("INSERT INTO busenos(source, key, value, updated) VALUES (?,?,?,?) "
+                    "ON CONFLICT(source, key) DO UPDATE SET value=excluded.value, updated=excluded.updated",
+                    [(source, k, v, ts) for k, v in pairs])
+    con.commit()
 
 
 def log_run(con, since_date, fetched, new_raw, new_signals, note=""):
@@ -233,6 +300,21 @@ def last_run(con, kind="run"):
     row = con.execute("SELECT MAX(started) AS t FROM runs WHERE note LIKE ? AND note NOT LIKE '%KLAIDA%'",
                       (kind + "%",)).fetchone()
     return row["t"] if row and row["t"] else None
+
+
+def run_times(con, n=2):
+    """Paskutinių n sėkmingų savaitinių paleidimų laikai (naujausias pirmas)."""
+    cur = con.execute("SELECT started FROM runs WHERE note LIKE 'run%' AND note NOT LIKE '%KLAIDA%' "
+                      "ORDER BY started DESC LIMIT ?", (n,))
+    return [r["started"] for r in cur]
+
+
+def first_run_since(con):
+    """Ankstyviausia „nuo“ data iš paskutinio sėkmingo `run` (pvz., „LT 2026-09-06; LV 2026-09-06“)."""
+    row = con.execute("SELECT since_date FROM runs WHERE note LIKE 'run%' AND note NOT LIKE '%KLAIDA%' "
+                      "ORDER BY started DESC LIMIT 1").fetchone()
+    dates = re.findall(r"\d{4}-\d{2}-\d{2}", (row["since_date"] or "") if row else "")
+    return min(dates) if dates else None
 
 
 def last_since(con, source="LT"):

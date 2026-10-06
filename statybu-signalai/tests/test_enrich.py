@@ -94,6 +94,30 @@ class LoadCompaniesTest(unittest.TestCase):
         self.assertEqual(r["legal_form"], "Uždaroji akcinė bendrovė")   # iš JAR
         self.assertEqual(r["employees"], 12)                            # iš Sodros
 
+    def test_latvian_and_estonian_registers(self):
+        lv = self.tmp.file("register.csv")      # LV UR: kabliataškis, UTF-8 be BOM
+        with open(lv, "w", encoding="utf-8") as fh:
+            fh.write("regcode;sepa;name;name_before_quotes;name_in_quotes;name_after_quotes;without_quotes;regtype;"
+                     "regtype_text;type;type_text;registered;terminated;closed;address;index;addressid;region;city;"
+                     "atvk;reregistration_term\n"
+                     '40103741893;;SIA \"DEMO Būve\";SIA;DEMO Būve;;0;K;Komercreģistrs;SIA;'
+                     "Sabiedrība ar ierobežotu atbildību;2013-12-02;;;Rīga, Brīvības iela 1;LV-1010;1;;Rīga;0001000;\n")
+        ee = self.tmp.file("ettevotja.zip")     # EE: ZIP, UTF-8 su BOM, kabliataškis
+        with zipfile.ZipFile(ee, "w") as z:
+            z.writestr("ettevotja_rekvisiidid__lihtandmed.csv", (
+                "\ufeffnimi;ariregistri_kood;ettevotja_oiguslik_vorm;ettevotja_oigusliku_vormi_alaliik;kmkr_nr;"
+                "ettevotja_staatus;ettevotja_staatus_tekstina;ettevotja_esmakande_kpv;ettevotja_aadress;"
+                "asukoht_ettevotja_aadressis;asukoha_ehak_kood;asukoha_ehak_tekstina\n"
+                "DEMO Ehitus OÜ;01834351;Osaühing;;EE100;R;Registrisse kantud;01.02.2010;;;0784;Tallinn\n"
+            ).encode("utf-8"))
+        with quiet():
+            self.assertEqual(enrich.load_companies(self.con, lv), 1)
+            self.assertEqual(enrich.load_companies(self.con, ee, only_codes={"01834351"}), 1)
+        r = self.con.execute("SELECT * FROM companies WHERE code='40103741893'").fetchone()
+        self.assertEqual((r["name"], r["legal_form"]), ('SIA "DEMO Būve"', "Sabiedrība ar ierobežotu atbildību"))
+        r = self.con.execute("SELECT * FROM companies WHERE code='01834351'").fetchone()   # nulis priekyje
+        self.assertEqual((r["name"], r["status"], r["municipality"]), ("DEMO Ehitus OÜ", "Registrisse kantud", "Tallinn"))
+
     def test_missing_code_column(self):
         path = self.tmp.file("bad.csv")
         with open(path, "w", encoding="utf-8") as fh:
